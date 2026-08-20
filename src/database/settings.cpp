@@ -296,12 +296,15 @@ QMap<QString, QVariant> Settings::initDefaultValues() const
     map.insert("/Board/colorCopy", false);
     map.insert("/Board/fixedImageSize", false);
     map.insert("/Board/copyImageSize", 400);
-    map.insert("/Board/showCurrentMove", 2);
+    map.insert("/Board/showCurrentMove", 1);
     map.insert("/Board/showMoveIndicator", 0);
     map.insert("/Board/guessMove", true);
     map.insert("/Board/showThreat", true);
     map.insert("/Board/showVariationArrows", true);
     map.insert("/Board/showTargets", false);
+    map.insert("/Board/modernStyle", true);
+    map.insert("/Board/showLegalMoves", true);
+    map.insert("/Board/animateMoves", true);
     map.insert("/Board/noHints", false);
     map.insert("/Board/nextGuess", 2);
     map.insert("/Board/minWheelCount", MIN_WHEEL_COUNT);

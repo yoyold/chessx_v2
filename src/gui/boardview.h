@@ -24,6 +24,7 @@
 
 #include <QWidget>
 #include <QPointer>
+#include <QVariantAnimation>
 
 using namespace chessx;
 
@@ -213,6 +214,20 @@ private:
 
     void drawHiliting(QPaintEvent* event);
     void drawSquares(QPaintEvent* event);
+    /** Fills a square with a translucent wash of @p color. */
+    void drawSquareWash(QPaintEvent* event, Square square, const QColor& color, int alpha);
+    /** Draws the inset ring used for the selected and hovered square. */
+    void drawSquareRing(QPaintEvent* event, Square square, const QColor& color, int alpha, int width);
+    /** Modern state layer: last move wash, selection, hover. Drawn below the pieces. */
+    void drawStateLayer(QPaintEvent* event);
+    /** Dots on empty legal targets, rings on capturable ones. */
+    void drawLegalMoves(QPaintEvent* event);
+    /** Recomputes m_legalTargets for the square a move would be made from. */
+    void updateLegalMoves(Square from);
+    /** @return the square a move is currently being made from: the drag origin
+        while dragging, otherwise the selected square. Selection is unavailable
+        while guess-move is enabled, so dragging is the usual source. */
+    Square moveOriginSquare() const;
     void drawTargets(QPaintEvent* event);
     void drawPieces(QPaintEvent* event);
     void drawCheck(QPaintEvent* event);
@@ -228,6 +243,11 @@ private:
     void drawArrowAnnotation(QPaintEvent* event, QString annotation);
 
     void startToDrag(QMouseEvent *event, Square s);
+
+    /** Starts the piece transit animation for the move @p from - @p to. */
+    void startMoveAnimation(Square from, Square to);
+    /** Stops any running transit animation and repaints. */
+    void stopMoveAnimation();
 
     BoardX m_board;
     BoardTheme m_theme;
@@ -249,6 +269,18 @@ private:
     Square m_dragStartSquare;
     Square m_alertSquare;
     QList<Square> m_targets;
+    /** Legal destinations from the square a move would be made from. */
+    QList<Square> m_legalTargets;
+    /** Square m_legalTargets was computed for. */
+    Square m_legalFrom;
+    bool m_modernStyle;
+    bool m_showLegalMoves;
+    bool m_animateMoves;
+    Square m_animFrom;
+    Square m_animTo;
+    Piece m_animPiece;
+    qreal m_animProgress;
+    QVariantAnimation* m_moveAnimation;
     bool m_atLineEnd;
     int m_flags;
     bool m_coordinates;

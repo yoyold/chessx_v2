@@ -40,6 +40,15 @@ BoardView::BoardView(QWidget* parent, int flags) : QWidget(parent),
     m_flipped(false), m_showFrame(false), m_showCurrentMove(2),
     m_guessMove(false), m_showThreat(false), m_showTargets(false), m_brushMode(false), m_selectedSquare(InvalidSquare),
     m_hoverSquare(InvalidSquare),
+    m_legalFrom(InvalidSquare),
+    m_modernStyle(true),
+    m_showLegalMoves(true),
+    m_animateMoves(true),
+    m_animFrom(InvalidSquare),
+    m_animTo(InvalidSquare),
+    m_animPiece(Empty),
+    m_animProgress(0.0),
+    m_moveAnimation(nullptr),
     m_hiFrom(InvalidSquare), m_hiTo(InvalidSquare),
     m_currentFrom(InvalidSquare), m_currentTo(InvalidSquare),
     m_storedFrom(InvalidSquare), m_storedTo(InvalidSquare),
@@ -109,9 +118,20 @@ int BoardView::flags() const
 void BoardView::setBoard(const BoardX& value, Square from, Square to, bool atLineEnd)
 {
     m_clickUsed = true;
+    const BoardX previous = m_board;
     m_board = value;
     m_currentFrom = from;
     m_currentTo = to;
+    m_legalFrom = InvalidSquare;
+    m_legalTargets.clear();
+    /* Animate only a genuine single-move step forward, never a jump to an
+       arbitrary position (game load, seek, board setup). */
+    stopMoveAnimation();
+    if (m_modernStyle && m_animateMoves && from != InvalidSquare && to != InvalidSquare &&
+        previous.pieceAt(from) != Empty && previous.pieceAt(from) == value.pieceAt(to))
+    {
+        startMoveAnimation(from, to);
+    }
     m_atLineEnd = atLineEnd;
     m_hiFrom = m_hiTo = InvalidSquare;
     m_alertSquare = value.kingInCheck();
@@ -291,7 +311,9 @@ void BoardView::drawHiliting(QPaintEvent* event)
 {
     if (isEnabled())
     {
-        for (Square square=a1; square<NumSquares; ++square)
+        /* In modern style the square states are painted by drawStateLayer(); only
+           the arrow overlays below still apply. */
+        for (Square square=a1; !m_modernStyle && square<NumSquares; ++square)
         {
             QRect rect = squareRect(square);
             if(!event->region().intersects(rect))
@@ -340,6 +362,247 @@ void BoardView::drawHiliting(QPaintEvent* event)
             thin++;    // all but the first variation are drawn as thin
         }
     }
+}
+
+void BoardView::drawSquareWash(QPaintEvent* event, Square square, const QColor& color, int alpha)
+{
+    if (square == InvalidSquare)
+    {
+        return;
+    }
+    QRect rect = squareRect(square);
+    if (!event->region().intersects(rect))
+    {
+        return;
+    }
+    QColor wash(color);
+    wash.setAlpha(alpha);
+    QPainter p(this);
+    p.fillRect(rect, wash);
+}
+
+void BoardView::drawSquareRing(QPaintEvent* event, Square square, const QColor& color, int alpha, int width)
+{
+    if (square == InvalidSquare)
+    {
+        return;
+    }
+    QRect rect = squareRect(square);
+    if (!event->region().intersects(rect))
+    {
+        return;
+    }
+    QColor ring(color);
+    ring.setAlpha(alpha);
+    QPainter p(this);
+    QPen pen(ring);
+    pen.setWidth(width);
+    pen.setJoinStyle(Qt::MiterJoin);
+    p.setPen(pen);
+    p.setBrush(Qt::NoBrush);
+    const int inset = width / 2;
+    p.drawRect(rect.adjusted(inset, inset, -inset - 1, -inset - 1));
+}
+
+void BoardView::drawStateLayer(QPaintEvent* event)
+{
+    if (!isEnabled())
+    {
+        return;
+    }
+
+    /* Last move: a full-square wash reads peripherally, unlike a hairline frame.
+       Only drawn in frame mode - arrow mode (showCurrentMove == 2) keeps its arrow. */
+    if (m_showCurrentMove == 1)
+    {
+        /* ~48%: enough to read peripherally over a textured board theme, which a
+           lighter wash does not. */
+        const QColor last = m_theme.color(BoardTheme::CurrentMove);
+        drawSquareWash(event, m_currentFrom, last, 122);
+        drawSquareWash(event, m_currentTo, last, 122);
+    }
+
+    if (m_storedFrom != InvalidSquare || m_storedTo != InvalidSquare)
+    {
+        const QColor stored = m_theme.color(BoardTheme::StoredMove);
+        drawSquareRing(event, m_storedFrom, stored, 200, 2);
+        drawSquareRing(event, m_storedTo, stored, 200, 2);
+    }
+
+    /* Selection is the user's own act, so it gets both a wash and a ring. */
+    const QColor hi = m_theme.color(BoardTheme::Highlight);
+    const Square origin = moveOriginSquare();
+    if (origin != InvalidSquare)
+    {
+        drawSquareWash(event, origin, hi, 70);
+        drawSquareRing(event, origin, hi, 235, 2);
+    }
+    if (m_hiFrom != InvalidSquare || m_hiTo != InvalidSquare)
+    {
+        drawSquareWash(event, m_hiFrom, hi, 70);
+        drawSquareWash(event, m_hiTo, hi, 70);
+    }
+
+    /* Hover is non-committal: a thin ring, never a fill. */
+    if (m_hoverSquare != InvalidSquare && m_hoverSquare != m_selectedSquare && underMouse())
+    {
+        drawSquareRing(event, m_hoverSquare, m_theme.color(BoardTheme::Coord), 70, 1);
+    }
+}
+
+void BoardView::updateLegalMoves(Square from)
+{
+    if (m_legalFrom == from)
+    {
+        return;
+    }
+    m_legalFrom = from;
+    m_legalTargets.clear();
+
+    if (from == InvalidSquare || !m_showLegalMoves || !Guess::guessAllowed())
+    {
+        return;
+    }
+    if (m_board.pieceAt(from) == Empty)
+    {
+        return;
+    }
+
+    /* Read-only query against the existing move generator - no rules code changes. */
+    Guess::MoveList moves;
+    Guess::Result r = Guess::guessMove(qPrintable(m_board.toFen()), m_board.chess960(), m_board.castlingRooks(),
+                                       static_cast<Guess::squareT>(from), moves);
+    if (r.error)
+    {
+        return;
+    }
+    foreach (Guess::simpleMoveT sm, moves)
+    {
+        if (Square(sm.from) == from)
+        {
+            Square target = Square(sm.visualTo());
+            if (target != from && !m_legalTargets.contains(target))
+            {
+                m_legalTargets.append(target);
+            }
+        }
+    }
+}
+
+Square BoardView::moveOriginSquare() const
+{
+    if (m_dragged != Empty && m_dragStartSquare != InvalidSquare)
+    {
+        return m_dragStartSquare;
+    }
+    return m_selectedSquare;
+}
+
+void BoardView::drawLegalMoves(QPaintEvent* event)
+{
+    updateLegalMoves(moveOriginSquare());
+
+    if (!m_showLegalMoves || !isEnabled() || m_legalTargets.isEmpty())
+    {
+        return;
+    }
+
+    QPainter p(this);
+    p.setRenderHint(QPainter::Antialiasing);
+
+    const QColor base = m_theme.color(BoardTheme::Target);
+    const int side = m_theme.size().width();
+
+    foreach (Square square, m_legalTargets)
+    {
+        QRect rect = squareRect(square);
+        if (!event->region().intersects(rect))
+        {
+            continue;
+        }
+
+        QColor mark(base);
+        if (m_board.pieceAt(square) != Empty)
+        {
+            /* Occupied target: a ring around the piece, so the piece stays visible. */
+            mark.setAlpha(150);
+            QPen pen(mark);
+            const int w = qMax(2, side / 12);
+            pen.setWidth(w);
+            p.setPen(pen);
+            p.setBrush(Qt::NoBrush);
+            p.drawEllipse(rect.center(), (side - w) / 2, (side - w) / 2);
+        }
+        else
+        {
+            mark.setAlpha(110);
+            p.setPen(Qt::NoPen);
+            p.setBrush(mark);
+            p.drawEllipse(rect.center(), side / 6, side / 6);
+        }
+    }
+}
+
+void BoardView::startMoveAnimation(Square from, Square to)
+{
+    stopMoveAnimation();
+
+    if (!m_animateMoves || from == InvalidSquare || to == InvalidSquare || from == to)
+    {
+        return;
+    }
+    if (!m_theme.isValid() || m_theme.size().width() <= 0)
+    {
+        return;
+    }
+    /* The board already holds the new position, so the piece in transit is the
+       one that has arrived on the destination square. */
+    Piece piece = m_board.pieceAt(to);
+    if (piece == Empty)
+    {
+        return;
+    }
+
+    m_animFrom = from;
+    m_animTo = to;
+    m_animPiece = piece;
+    m_animProgress = 0.0;
+
+    m_moveAnimation = new QVariantAnimation(this);
+    m_moveAnimation->setDuration(140);
+    m_moveAnimation->setStartValue(0.0);
+    m_moveAnimation->setEndValue(1.0);
+    m_moveAnimation->setEasingCurve(QEasingCurve::OutCubic);
+    connect(m_moveAnimation, &QVariantAnimation::valueChanged, this, [this](const QVariant& v)
+    {
+        m_animProgress = v.toReal();
+        update(squareRect(m_animFrom));
+        update(squareRect(m_animTo));
+        /* The piece sweeps across the squares between the two, so repaint the
+           bounding box of the whole transit. */
+        update(squareRect(m_animFrom).united(squareRect(m_animTo)));
+    });
+    connect(m_moveAnimation, &QVariantAnimation::finished, this, [this]()
+    {
+        m_animFrom = m_animTo = InvalidSquare;
+        m_animPiece = Empty;
+        m_moveAnimation = nullptr;
+        update();
+    });
+    m_moveAnimation->start(QAbstractAnimation::DeleteWhenStopped);
+}
+
+void BoardView::stopMoveAnimation()
+{
+    if (m_moveAnimation)
+    {
+        QVariantAnimation* anim = m_moveAnimation;
+        m_moveAnimation = nullptr;
+        anim->stop();   // DeleteWhenStopped disposes of it
+    }
+    m_animFrom = m_animTo = InvalidSquare;
+    m_animPiece = Empty;
+    m_animProgress = 0.0;
 }
 
 void BoardView::drawTargets(QPaintEvent* event)
@@ -439,7 +702,22 @@ void BoardView::drawPieces(QPaintEvent* event)
             }
         }
 
+        if (square == m_animTo && m_animPiece != Empty)
+        {
+            continue;   // drawn at its interpolated position below
+        }
+
         p.drawPixmap(pos, m_theme.piece(m_board.pieceAt(square)));
+    }
+
+    if (m_animPiece != Empty && m_animFrom != InvalidSquare && m_animTo != InvalidSquare)
+    {
+        const QPoint a = posFromSquare(m_animFrom);
+        const QPoint b = posFromSquare(m_animTo);
+        const QPoint at(a.x() + qRound((b.x() - a.x()) * m_animProgress),
+                        a.y() + qRound((b.y() - a.y()) * m_animProgress));
+        p.setRenderHint(QPainter::SmoothPixmapTransform);
+        p.drawPixmap(at, m_theme.piece(m_animPiece));
     }
 
     // Always draw outer rectangle
@@ -456,12 +734,20 @@ void BoardView::paintEvent(QPaintEvent* event)
 
     drawSquares(event);
     drawCoordinates(event);
+    if (m_modernStyle)
+    {
+        drawStateLayer(event);
+    }
     drawAttacks(event);
     drawSquareAnnotations(event);
     drawTargets(event);
     drawCheck(event);
     drawUnderProtection(event);
     drawPieces(event);
+    if (m_modernStyle)
+    {
+        drawLegalMoves(event);
+    }
     drawHiliting(event);
     drawMoveIndicator(event);
     drawArrowAnnotations(event);
@@ -1121,7 +1407,11 @@ void BoardView::configure(bool allowErrorMessage)
     m_showThreat = AppSettings->getValue("showThreat").toBool();
     m_minDeltaWheel = AppSettings->getValue("minWheelCount").toInt();
     m_showMoveIndicatorMode = AppSettings->getValue("showMoveIndicator").toInt();
+    m_modernStyle = AppSettings->getValue("modernStyle").toBool();
+    m_showLegalMoves = AppSettings->getValue("showLegalMoves").toBool();
+    m_animateMoves = AppSettings->getValue("animateMoves").toBool();
     AppSettings->endGroup();
+    stopMoveAnimation();
     m_theme.configure(allowErrorMessage);
     m_theme.setEnabled(isEnabled());
     removeGuess();
@@ -1146,7 +1436,7 @@ void BoardView::selectSquare(Square s)
     }
     unselectSquare();
     m_selectedSquare = s;
-    update(squareRect(s));
+    update();
 }
 
 void BoardView::unselectSquare()
@@ -1155,7 +1445,9 @@ void BoardView::unselectSquare()
     m_selectedSquare = InvalidSquare;
     if(prev != InvalidSquare)
     {
-        update(squareRect(prev));
+        m_legalFrom = InvalidSquare;
+        m_legalTargets.clear();
+        update();
     }
 }
 

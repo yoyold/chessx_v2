@@ -286,20 +286,22 @@ void ChessXSettings::setLayout(const QWidget* w)
 
 void ChessXSettings::initWidgetValues(QMap<QString, QVariant>& map) const
 {
-    map.insert("/Board/lightColor", QColor(Qt::lightGray));
-    map.insert("/Board/darkColor", QColor(Qt::darkGray));
-    map.insert("/Board/highlightColor", QColor(Qt::yellow));
-    map.insert("/Board/frameColor", QColor(Qt::black));
-    map.insert("/Board/coordColor", QColor(Qt::black));
-    map.insert("/Board/currentMoveColor", QColor(Qt::blue));
-    map.insert("/Board/storedMoveColor", QColor(Qt::magenta));
-    map.insert("/Board/variationMoveColor", QColor(Qt::darkMagenta));
+    /* Defaults follow the design tokens in DesignTokens; all remain editable
+       under Preferences > Board > Colors. */
+    map.insert("/Board/lightColor", QColor("#d9cbb0"));          // board-light
+    map.insert("/Board/darkColor", QColor("#6e8259"));           // board-dark
+    map.insert("/Board/highlightColor", QColor("#43ada5"));      // accent - selection
+    map.insert("/Board/frameColor", QColor("#3a342c"));          // line
+    map.insert("/Board/coordColor", QColor("#efe9df"));          // ink
+    map.insert("/Board/currentMoveColor", QColor("#dfa34e"));    // board-last-move
+    map.insert("/Board/storedMoveColor", QColor("#b07bc9"));
+    map.insert("/Board/variationMoveColor", QColor("#8a63a8"));
     map.insert("/Board/threatColor", QColor(0xe0,0xe0,0xff,0x80));
-    map.insert("/Board/targetColor", QColor(Qt::darkGreen));
-    map.insert("/Board/checkColor", QColor(Qt::magenta));
+    map.insert("/Board/targetColor", QColor("#1a1712"));         // board-legal
+    map.insert("/Board/checkColor", QColor("#cf5546"));          // blunder
     map.insert("/Board/wallColor", QColor(Qt::darkGray));
-    map.insert("/Board/underprotectedColor", QColor(Qt::red));
-    map.insert("/Board/engineColor", QColor("orange"));
+    map.insert("/Board/underprotectedColor", QColor("#df7b46"));  // mistake
+    map.insert("/Board/engineColor", QColor("#43ada5"));          // accent - engine
 }
 
 //////////////////////////////////////////////////////////////////////////////
