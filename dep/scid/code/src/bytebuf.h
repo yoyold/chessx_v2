@@ -30,6 +30,8 @@
 
 #include "board_def.h"
 #include "error.h"
+
+#include <cstdint>
 #include <algorithm>
 #include <cassert>
 #include <cstring>

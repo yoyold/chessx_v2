@@ -127,9 +127,11 @@
         <file alias="sounds/movex.wav">data/sounds/movex.wav</file>
         <file alias="sounds/woodthunk.wav">data/sounds/woodthunk.wav</file>
         <file alias="styles/checkbox.png">data/styles/checkbox.png</file>
+        <file alias="styles/check.svg">data/styles/check.svg</file>
         <file alias="styles/down_arrow.png">data/styles/down_arrow.png</file>
         <file alias="styles/handle.png">data/styles/handle.png</file>
         <file alias="styles/orange.css">data/styles/orange.css</file>
+        <file alias="styles/chessx.qss">data/styles/chessx.qss</file>
         <file alias="templates/html-default.template">data/templates/html-default.template</file>
         <file alias="templates/latex-default.template">data/templates/latex-default.template</file>
         <file alias="templates/notation-default.template">data/templates/notation-default.template</file>

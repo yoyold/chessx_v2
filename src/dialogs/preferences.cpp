@@ -35,6 +35,8 @@
 #include <QPushButton>
 #include <QSpinBox>
 #include <QStyleFactory>
+
+#include "style.h"
 #include <QRegularExpression>
 #include <QTextStream>
 
@@ -567,6 +569,7 @@ void PreferencesDialog::restoreSettings()
     ui.verticalTabs->setChecked(AppSettings->getValue("/MainWindow/VerticalTabs").toBool());
     ui.darkTheme->setChecked(AppSettings->getValue("/MainWindow/DarkTheme").toBool());
 
+    ui.theme->addItem(Style::ModernTheme);
     QStringList motifs = QStyleFactory::keys();
     foreach(QString s, motifs)
     {

@@ -265,7 +265,7 @@ QMap<QString, QVariant> Settings::initDefaultValues() const
     map.insert("/MainWindow/ToolbarIconSize", DEFAULT_ICONSIZE);
     map.insert("/MainWindow/VerticalTabs", false);
     map.insert("/MainWindow/DarkTheme", false);
-    map.insert("/MainWindow/Theme", "plastique");
+    map.insert("/MainWindow/Theme", "ChessX");
     map.insert("/MainWindow/StayOnTop", false);
     map.insert("/MainWindow/FilterFollowsGame", false);
     map.insert("/MainWindow/ShowMenuIcons", true);

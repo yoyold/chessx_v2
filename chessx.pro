@@ -326,6 +326,7 @@ HEADERS += src/database/board.h \
   src/gui/qt6compat.h \
   src/gui/shellhelper.h \
   src/gui/simplelabel.h \
+  src/gui/designtokens.h \
   src/gui/style.h \
   src/gui/tableview.h \
   src/gui/testadapter.h \
@@ -498,6 +499,7 @@ SOURCES += \
   src/gui/qled.cpp \
   src/gui/shellhelper.cpp \
   src/gui/simplelabel.cpp \
+  src/gui/designtokens.cpp \
   src/gui/style.cpp \
   src/gui/tableview.cpp \
   src/gui/testadapter.cpp \

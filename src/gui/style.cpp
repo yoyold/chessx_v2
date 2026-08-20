@@ -2,6 +2,7 @@
 *   Copyright (C) 2014 by Jens Nissen jens-chessx@gmx.net                   *
 ****************************************************************************/
 
+#include "designtokens.h"
 #include "settings.h"
 #include "style.h"
 
@@ -24,13 +25,22 @@ Style::Style() : Style(styleBase()) {}
 
 Style::Style(QStyle *style) : QProxyStyle(style) {}
 
+const char* Style::ModernTheme = "ChessX";
+
 QStyle *Style::styleBase()
 {
     static QStyle *base = 0;
     if (!base)
     {
         QString motif = AppSettings->getValue("/MainWindow/Theme").toString();
-        if (motif == "Orange")
+        if (motif == ModernTheme)
+        {
+            /* Fusion is the only base style that honours a custom palette on every
+               platform, so the modern theme always builds on top of it. */
+            base = QStyleFactory::create(QStringLiteral("fusion"));
+            loadModernStyle(qApp);
+        }
+        else if (motif == "Orange")
         {
             base = QStyleFactory::create(QStringLiteral("fusion"));
             loadStyle(qApp);
@@ -44,6 +54,22 @@ QStyle *Style::styleBase()
     return base;
 }
 
+bool Style::isModernTheme()
+{
+    return AppSettings->getValue("/MainWindow/Theme").toString() == ModernTheme;
+}
+
+void Style::loadModernStyle(QApplication *app)
+{
+    if (!app) return;
+    DesignTokens::configure();
+    QString sheet = DesignTokens::styleSheet();
+    if (!sheet.isEmpty())
+    {
+        app->setStyleSheet(sheet);
+    }
+}
+
 QStyle *Style::baseStyle() { return styleBase(); }
 
 void Style::modifyPalette(QPalette& palette)
@@ -53,6 +79,14 @@ void Style::modifyPalette(QPalette& palette)
 #else
     bool isDark = false;
 #endif
+    if (isModernTheme())
+    {
+        /* The modern theme derives the whole palette from the design tokens so that
+           palette and stylesheet can never disagree. */
+        DesignTokens::configure();
+        DesignTokens::applyPalette(palette);
+        return;
+    }
     if (AppSettings->getValue("/MainWindow/DarkTheme").toBool() || isDark)
     {
         palette.setColor(QPalette::Window,QColor(53,53,53));
