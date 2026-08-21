@@ -168,6 +168,26 @@ QToolButton:disabled {
 }
 
 /* --------------------------------------------------------------------------
+   Toasts
+
+   Elevation here is one of the few places a shadow would be appropriate, but Qt
+   style sheets have none - so a raised surface plus a strong border does the
+   work instead.
+   -------------------------------------------------------------------------- */
+
+QFrame#Toast {
+    background: @overlay;
+    border: 1px solid @line-strong;
+    border-radius: @radius-md;
+}
+
+QLabel#ToastText {
+    color: @ink;
+    padding: @space3 0px;
+    background: transparent;
+}
+
+/* --------------------------------------------------------------------------
    Command palette
 
    An overlay, so it sits on the raised surface with a strong border to separate

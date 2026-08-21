@@ -82,6 +82,7 @@
 #include "commandpalette.h"
 #include "evalbar.h"
 #include "navrail.h"
+#include "toasthost.h"
 #include "qt6compat.h"
 
 template< typename T, std::size_t N >
@@ -107,7 +108,8 @@ MainWindow::MainWindow() : QMainWindow(),
     m_scratchPad(nullptr),
     m_bEvalRequested(false),
     m_lastMessageWasHint(false),
-    m_readAhead(0)
+    m_readAhead(0),
+    m_breakpoint(-1)
 {
     setObjectName("MainWindow");
     m_registry = new DatabaseRegistry();
@@ -447,6 +449,7 @@ MainWindow::MainWindow() : QMainWindow(),
     m_menuView->addAction(ficsConsoleDock->toggleViewAction());
 
     setupNavRail();
+    m_toastHost = new ToastHost(this);
 
     /* Restoring layouts */
     if(!AppSettings->layout(this))
@@ -714,6 +717,88 @@ void MainWindow::setupAnalysisWidget(DockWidgetEx* analysisDock, AnalysisWidget*
         connect(analysis, SIGNAL(evaluationChanged(int)), SLOT(slotEvaluationChanged(int)));
         connect(analysis, SIGNAL(evaluationMate(int)), SLOT(slotEvaluationMate(int)));
         connect(analysis, SIGNAL(evaluationCleared()), SLOT(slotEvaluationCleared()));
+    }
+}
+
+void MainWindow::resizeEvent(QResizeEvent* event)
+{
+    QMainWindow::resizeEvent(event);
+    applyResponsiveLayout();
+}
+
+void MainWindow::applyResponsiveLayout()
+{
+    if (!useModernLayout() || !AppSettings->getValue("/MainWindow/ResponsiveLayout").toBool())
+    {
+        return;
+    }
+
+    /* Three steps, matching the design blueprint. The board claims space first;
+       the rail gives up its labels, then the context panels step aside. */
+    enum { Compact = 0, Tablet = 1, Desktop = 2 };
+    const int w = width();
+    const int bp = (w >= 1280) ? Desktop : (w >= 900 ? Tablet : Compact);
+
+    if (bp == m_breakpoint)
+    {
+        return;   // only act on a change, not on every pixel of a drag
+    }
+    const int previous = m_breakpoint;
+    m_breakpoint = bp;
+
+    if (m_navRail)
+    {
+        /* Below desktop width the labels are the first thing to go. The user's
+           own preference is only honoured at desktop width. */
+        if (bp == Desktop)
+        {
+            m_navRail->setExpanded(AppSettings->getValue("/MainWindow/NavRailExpanded").toBool());
+        }
+        else
+        {
+            m_navRail->setExpanded(false);
+        }
+    }
+
+    if (bp == Compact)
+    {
+        /* No room for board and panels side by side: the board wins. Whole dock
+           areas are hidden rather than named docks - hiding only the front tab
+           just raises its neighbour, which is how the first attempt leaked
+           "Annotations" and "Databases" back onto the screen. */
+        foreach (DockWidgetEx* dock, findChildren<DockWidgetEx*>())
+        {
+            const Qt::DockWidgetArea area = dockWidgetArea(dock);
+            if (area != Qt::LeftDockWidgetArea && area != Qt::RightDockWidgetArea)
+            {
+                continue;
+            }
+            /* isHidden(), not isVisible(): the first resize arrives while the
+               window is still being constructed, when nothing is "visible" yet. */
+            if (!dock->isHidden() && !dock->isFloating())
+            {
+                m_responsiveHidden.append(dock->objectName());
+                dock->hide();
+            }
+        }
+    }
+    else if (previous == Compact)
+    {
+        /* Restore exactly what the rule hid, and nothing else. */
+        foreach (const QString& name, m_responsiveHidden)
+        {
+            DockWidgetEx* dock = findChild<DockWidgetEx*>(name);
+            if (dock) dock->show();
+        }
+        m_responsiveHidden.clear();
+    }
+}
+
+void MainWindow::slotToast(const QString& text, int severity)
+{
+    if (m_toastHost)
+    {
+        m_toastHost->showToast(text, static_cast<ToastHost::Severity>(severity));
     }
 }
 
@@ -1565,6 +1650,7 @@ bool MainWindow::ActivateDatabase(QString fname)
             else
             {
                 slotStatusMessage(tr("Database %1 cannot be accessed at the moment.").arg(fname));
+                slotToast(tr("Database %1 cannot be accessed at the moment.").arg(fname), ToastHost::Error);
             }
             return true;
         }
@@ -1589,6 +1675,7 @@ void MainWindow::openDatabaseFile(QString fname, bool utf8)
     if (fname.isEmpty())
     {
         slotStatusMessage("File not found.");
+        slotToast(tr("File not found."), ToastHost::Error);
         return;
     }
     if (ActivateDatabase(fname))
@@ -1626,6 +1713,7 @@ void MainWindow::loadError(QUrl url)
     requestUtf8.remove(targetName);
     QFileInfo fi = QFileInfo(url.toString());
     slotStatusMessage(tr("Database %1 cannot be accessed at the moment (%2).").arg(fi.fileName(), url.errorString()));
+    slotToast(tr("Database %1 cannot be accessed at the moment (%2).").arg(fi.fileName(), url.errorString()), ToastHost::Error);
 }
 
 void MainWindow::loadReady(QUrl url, QString filename)
@@ -2683,6 +2771,7 @@ void MainWindow::slotVersionFound(int major, int minor, int build)
     if(verInternet > verCurrent)
     {
         slotStatusMessage(tr("A new version is available at chessx.sourceforge.net"));
+        slotToast(tr("A new version is available at chessx.sourceforge.net"), ToastHost::Info);
     }
 }
 

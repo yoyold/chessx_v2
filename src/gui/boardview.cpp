@@ -1411,6 +1411,11 @@ void BoardView::configure(bool allowErrorMessage)
     m_showLegalMoves = AppSettings->getValue("showLegalMoves").toBool();
     m_animateMoves = AppSettings->getValue("animateMoves").toBool();
     AppSettings->endGroup();
+    /* One switch governs every animation in the application. */
+    if (AppSettings->getValue("/General/reducedMotion").toBool())
+    {
+        m_animateMoves = false;
+    }
     stopMoveAnimation();
     m_theme.configure(allowErrorMessage);
     m_theme.setEnabled(isEnabled());

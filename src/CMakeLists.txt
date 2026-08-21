@@ -446,6 +446,8 @@ add_library(gui STATIC
   gui/designtokens.h
   gui/commandpalette.cpp
   gui/commandpalette.h
+  gui/toasthost.cpp
+  gui/toasthost.h
   gui/evalbar.cpp
   gui/evalbar.h
   gui/navrail.cpp

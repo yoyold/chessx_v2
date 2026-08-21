@@ -41,6 +41,7 @@ class DatabaseRegistry;
 class CommandPalette;
 class DockWidgetEx;
 class NavRail;
+class ToastHost;
 class DownloadManager;
 class ECOListWidget;
 class EcoThread;
@@ -90,6 +91,7 @@ public:
 protected:
     /** QObjects Eventfilter for QApplication events */
     bool eventFilter(QObject *obj, QEvent *event);
+    void resizeEvent(QResizeEvent *event) override;
     /** Overridden to ask for confirmation */
     void closeEvent(QCloseEvent* e);
     /** Filter key events. */
@@ -141,6 +143,8 @@ protected:
     void slotNavigate(int destination);
     /** Opens the searchable command palette. */
     void slotCommandPalette();
+    /** Raises a transient notification over the window. */
+    void slotToast(const QString& text, int severity);
     /** Feeds the current board's evaluation bar from the primary engine. */
     void slotEvaluationChanged(int centipawns);
     void slotEvaluationMate(int moves);
@@ -631,6 +635,8 @@ private:
     void setupNavRail();
     /** Shows and raises the dock with the given object name, if it exists. */
     void raiseDockByName(const QString& objectName);
+    /** Applies the layout rules for the window's current width. */
+    void applyResponsiveLayout();
     /** @return true when the modern shell layout is active. */
     static bool useModernLayout();
 
@@ -722,6 +728,11 @@ private:
     QPointer<QSplitter> m_boardSplitter;
     QPointer<NavRail> m_navRail;
     QPointer<CommandPalette> m_commandPalette;
+    QPointer<ToastHost> m_toastHost;
+    /** Last responsive breakpoint applied, so a resize only acts on a change. */
+    int m_breakpoint;
+    /** Docks hidden by the responsive rule, so they can be restored exactly. */
+    QStringList m_responsiveHidden;
     GameNotationWidget* m_gameView;
     OpeningTreeWidget* m_openingTreeWidget;
     QPointer<QProgressBar> m_progressBar;
