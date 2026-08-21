@@ -22,6 +22,7 @@
 
 class QListWidgetItem;
 class DownloadManager;
+class SettingsSearch;
 
 /** @ingroup GUI
 The PreferencesDialog class is a dialog for configuring ChessX.
@@ -36,6 +37,12 @@ public:
     virtual ~PreferencesDialog();
 
      static void setupIconInMenus(QObject* pObject);
+
+private:
+    /** Search field placed above the tab pages. */
+    SettingsSearch* m_settingsSearch;
+
+public:
 
 public slots:
     void setAnchor(QString anchor);

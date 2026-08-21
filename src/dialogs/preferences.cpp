@@ -36,6 +36,8 @@
 #include <QSpinBox>
 #include <QStyleFactory>
 
+#include "settingssearch.h"
+
 #include "style.h"
 #include <QRegularExpression>
 #include <QTextStream>
@@ -115,6 +117,16 @@ PreferencesDialog::PreferencesDialog(QWidget* parent, Qt::WindowFlags f) : QDial
     {
         ui.labelLoadStatus->setText(tr("For updating translations online version checking needs to be enabled."));
     }
+    /* Built last, so the index sees every page fully populated. The search sits
+       above the tabs, which means the grid rows below it shift down by one. */
+    m_settingsSearch = new SettingsSearch(ui.tabWidget, this);
+    ui.gridLayout->removeWidget(ui.tabWidget);
+    ui.gridLayout->removeItem(ui.buttonLayout);
+    ui.gridLayout->addWidget(m_settingsSearch, 0, 0);
+    ui.gridLayout->addWidget(ui.tabWidget, 1, 0);
+    ui.gridLayout->addLayout(ui.buttonLayout, 2, 0);
+    ui.gridLayout->setRowStretch(1, 1);
+
     QTimer::singleShot(0, this, SLOT(restoreLayout()));
 }
 

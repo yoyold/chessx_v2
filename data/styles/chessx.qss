@@ -168,6 +168,41 @@ QToolButton:disabled {
 }
 
 /* --------------------------------------------------------------------------
+   Settings search
+   -------------------------------------------------------------------------- */
+
+QLineEdit#SettingsSearchField {
+    background: @surface;
+    border: 1px solid @line;
+    border-radius: @radius-md;
+    padding: 6px @space3;
+}
+
+QLineEdit#SettingsSearchField:focus {
+    border-color: @accent;
+}
+
+QListWidget#SettingsSearchResults {
+    background: @overlay;
+    border: 1px solid @line-strong;
+    border-radius: @radius-md;
+    padding: @space1;
+    outline: none;
+}
+
+QListWidget#SettingsSearchResults::item {
+    padding: 4px @space2;
+    border-radius: @radius-sm;
+    color: @ink-2;
+}
+
+QListWidget#SettingsSearchResults::item:selected,
+QListWidget#SettingsSearchResults::item:hover {
+    background: @accent-wash;
+    color: @accent;
+}
+
+/* --------------------------------------------------------------------------
    Home dashboard
    -------------------------------------------------------------------------- */
 

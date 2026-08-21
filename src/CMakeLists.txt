@@ -450,6 +450,8 @@ add_library(gui STATIC
   gui/toasthost.h
   gui/evalbar.cpp
   gui/evalbar.h
+  dialogs/settingssearch.cpp
+  dialogs/settingssearch.h
   gui/homeview.cpp
   gui/homeview.h
   gui/navrail.cpp

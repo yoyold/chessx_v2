@@ -330,6 +330,7 @@ HEADERS += src/database/board.h \
   src/gui/commandpalette.h \
   src/gui/toasthost.h \
   src/gui/evalbar.h \
+  src/dialogs/settingssearch.h \
   src/gui/homeview.h \
   src/gui/navrail.h \
   src/gui/style.h \
@@ -508,6 +509,7 @@ SOURCES += \
   src/gui/commandpalette.cpp \
   src/gui/toasthost.cpp \
   src/gui/evalbar.cpp \
+  src/dialogs/settingssearch.cpp \
   src/gui/homeview.cpp \
   src/gui/navrail.cpp \
   src/gui/style.cpp \
