@@ -4137,6 +4137,15 @@ void MainWindow::UpdateBoardInformation()
         }
         name += "</div>";
         m_tabWidget->setTabToolTip(m_tabWidget->currentIndex(), name);
+
+        /* The same tags name the two sides in the bands around the board. */
+        BoardViewEx* frame = BoardViewFrame(m_boardView);
+        if (frame)
+        {
+            frame->setPlayers(nameWhite, game().tag(TagNameWhiteElo),
+                              nameBlack, game().tag(TagNameBlackElo));
+            frame->setSideToMove(game().board().toMove());
+        }
     }
 }
 

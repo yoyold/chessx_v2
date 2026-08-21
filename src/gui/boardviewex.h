@@ -5,6 +5,8 @@
 #ifndef BOARDVIEWEX_H
 #define BOARDVIEWEX_H
 
+#include "piece.h"
+
 #include <QWidget>
 #include <QPixmap>
 
@@ -14,6 +16,7 @@ class BoardViewEx;
 
 class BoardView;
 class EvalBar;
+class PlayerCard;
 
 class BoardViewEx : public QWidget
 {
@@ -25,6 +28,11 @@ public:
     BoardView* boardView();
     /** @return the evaluation bar beside the board. */
     EvalBar* evalBar();
+    /** Names the two sides in the bands above and below the board. */
+    void setPlayers(const QString& white, const QString& whiteElo,
+                    const QString& black, const QString& blackElo);
+    /** Marks whose turn it is. */
+    void setSideToMove(Color color);
     QObject *dbIndex();
 
 public slots:
@@ -47,6 +55,8 @@ private:
     void resizeEvent(QResizeEvent* e);
     QPixmap scaledBackground;
     EvalBar* m_evalBar;
+    PlayerCard* m_cardTop;
+    PlayerCard* m_cardBottom;
     Ui::BoardViewEx *ui;
 };
 

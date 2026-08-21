@@ -13,6 +13,7 @@
 #include "analysis.h"
 #include "analysiswidget.h"
 #include "designtokens.h"
+#include "vectoricons.h"
 
 #include <QToolButton>
 #include "board.h"
@@ -52,7 +53,9 @@ AnalysisWidget::AnalysisWidget(QWidget *parent)
        output pane, which is not somewhere anyone looks. */
     m_btCollapse = new QToolButton(this);
     m_btCollapse->setObjectName("btCollapseLines");
-    m_btCollapse->setText(tr("Lines"));
+    m_btCollapse->setIcon(VectorIcons::iconFor(":/images/readAhead.png", 16));
+    m_btCollapse->setIconSize(QSize(16, 16));
+    m_btCollapse->setAutoRaise(true);
     m_btCollapse->setCheckable(true);
     m_btCollapse->setChecked(!m_hideLines);
     m_btCollapse->setToolTip(tr("Show the full engine lines, not just the score and best move"));
@@ -70,6 +73,9 @@ AnalysisWidget::AnalysisWidget(QWidget *parent)
             SLOT(slotLinkClicked(QUrl)));
     connect(ui.vpcount, SIGNAL(valueChanged(int)), SLOT(slotMpvChanged(int)));
     connect(ui.btPin, SIGNAL(clicked(bool)), SLOT(slotPinChanged(bool)));
+    ui.engineList->setMinimumWidth(110);
+    ui.engineList->setSizeAdjustPolicy(QComboBox::AdjustToMinimumContentsLengthWithIcon);
+    ui.bookList->setMinimumWidth(70);
     ui.analyzeButton->setFixedHeight(ui.engineList->sizeHint().height());
 
     m_tablebase = new OnlineTablebase;
@@ -790,7 +796,9 @@ QString AnalysisWidget::verdictStrip() const
     }
     html += "</td>";
     html += QString("<td align=\"right\" valign=\"middle\"><span style=\"color:%1;\">%2</span></td>")
-            .arg(muted, telemetry.join(" &middot; ").toHtmlEscaped());
+            /* The separator is a character, not markup: writing "&middot;" here
+               would be escaped along with the telemetry and shown literally. */
+            .arg(muted, telemetry.join(QString(QChar(0x00B7)).prepend(' ').append(' ')).toHtmlEscaped());
     html += "</tr></table>";
     return html;
 }

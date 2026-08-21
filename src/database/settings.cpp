@@ -10,6 +10,8 @@
 #include "bitboard.h"
 #include "settings.h"
 
+#include <QColor>
+
 #include <QCoreApplication>
 #include <QPixmap>
 #include <QtCore>
@@ -35,8 +37,122 @@ Settings::~Settings()
 void Settings::initialize()
 {
     defaultValues = initDefaultValues();
+    migrate();
     beginGroup("GameText");
     BitBoard::PieceNames::custom().set(getValue("PieceString").toString());
+    endGroup();
+}
+
+void Settings::migrate()
+{
+    /* Changing a default only ever helps a brand new profile - an existing one
+       keeps whatever it stored years ago, which is why the redesign has to
+       carry old profiles forward explicitly. Each step runs once, in order. */
+    const int version = value("/General/SettingsVersion", 0).toInt();
+    if (version >= SettingsVersion)
+    {
+        return;
+    }
+
+    if (version < 1)
+    {
+        migrateGameText();
+    }
+    if (version < 2)
+    {
+        migrateBoardAppearance();
+    }
+
+    setValue("/General/SettingsVersion", SettingsVersion);
+}
+
+void Settings::migrateGameText()
+{
+    /* "black" main-line moves are unreadable on a dark ground, and the
+       blue/green/red around them belong to the old look. */
+    struct Migration { const char* key; const char* from; const char* to; };
+    static const Migration gameText[] =
+    {
+        { "MainLineMoveColor", "black", "#efe9df" },   // ink
+        { "VariationColor",    "blue",  "#948b7e" },   // muted
+        { "CommentColor",      "green", "#43ada5" },   // accent
+        { "NagColor",          "red",   "#dfa34e" },   // inaccuracy
+        { nullptr, nullptr, nullptr }
+    };
+
+    beginGroup("GameText");
+    for (int i = 0; gameText[i].key; ++i)
+    {
+        const QString key = QString::fromLatin1(gameText[i].key);
+        const QVariant stored = value(key);
+        /* Compare as colours: these are held as serialised QColor by older
+           profiles and as plain strings by newer ones, so a string comparison
+           would miss the very profiles that need migrating. */
+        const QColor current = stored.value<QColor>();
+        const QColor legacy(QString::fromLatin1(gameText[i].from));
+
+        if (!stored.isValid() || !current.isValid() || current == legacy)
+        {
+            setValue(key, QString::fromLatin1(gameText[i].to));
+        }
+    }
+
+    /* 10pt was the old Windows default and is too small for a densely
+       annotated game text. Only the previous defaults are moved on. */
+    const int fontSize = value("FontSize", 0).toInt();
+    if (fontSize == 0 || fontSize == 10 || fontSize == 12)
+    {
+        setValue("FontSize", 13);
+    }
+    endGroup();
+}
+
+void Settings::migrateBoardAppearance()
+{
+    /* The board is the subject of the window, so it ships flat and unadorned:
+       two-tone squares in the manner of the web chess sites, a flat piece set,
+       and no photograph behind it. Only the previous defaults are moved on, so
+       a board someone has themed deliberately is left alone. */
+    beginGroup("Board");
+
+    if (value("boardTheme").toString().compare("brazilwood", Qt::CaseInsensitive) == 0)
+    {
+        setValue("boardTheme", QString());     // plain colours instead of a texture
+    }
+    if (value("pieceTheme").toString().compare("merida", Qt::CaseInsensitive) == 0)
+    {
+        setValue("pieceTheme", QStringLiteral("cburnett"));
+        setValue("pieceEffect", 0);
+    }
+
+    /* The photographic backdrop competes with the board and leaves a large
+       empty band around it. */
+    if (value("Background", true).toBool())
+    {
+        setValue("Background", false);
+    }
+
+    struct ColorMigration { const char* key; const char* from; const char* to; };
+    static const ColorMigration colors[] =
+    {
+        { "lightColor", "#d9cbb0", "#dfe3c4" },
+        { "darkColor",  "#6e8259", "#6a854a" },
+        { nullptr, nullptr, nullptr }
+    };
+    for (int i = 0; colors[i].key; ++i)
+    {
+        const QString key = QString::fromLatin1(colors[i].key);
+        const QColor current = value(key).value<QColor>();
+        const QColor previous(QString::fromLatin1(colors[i].from));
+        /* Also catch the original light/dark grey pair from before the redesign. */
+        const bool wasDefault = !current.isValid() || current == previous ||
+                                current == QColor(Qt::lightGray) || current == QColor(Qt::darkGray);
+        if (wasDefault)
+        {
+            setValue(key, QColor(QString::fromLatin1(colors[i].to)));
+        }
+    }
+
     endGroup();
 }
 
@@ -247,10 +363,10 @@ QMap<QString, QVariant> Settings::initDefaultValues() const
     map.insert("/GameText/VariationIndentLevel", 1);
     map.insert("/GameText/VariationIndentSize", 3);
     map.insert("/GameText/CommentIndent", "Never");
-    map.insert("/GameText/MainLineMoveColor", "black");
-    map.insert("/GameText/VariationColor", "blue");
-    map.insert("/GameText/CommentColor", "green");
-    map.insert("/GameText/NagColor", "red");
+    map.insert("/GameText/MainLineMoveColor", "#efe9df");   // ink
+    map.insert("/GameText/VariationColor", "#948b7e");      // muted
+    map.insert("/GameText/CommentColor", "#43ada5");        // accent
+    map.insert("/GameText/NagColor", "#dfa34e");            // inaccuracy
     map.insert("/GameText/HeaderColor", "blue");
     map.insert("/GameText/ShowHeader", false);
     map.insert("/GameText/ShowDiagrams", true);
@@ -313,9 +429,9 @@ QMap<QString, QVariant> Settings::initDefaultValues() const
     map.insert("/Board/noHints", false);
     map.insert("/Board/nextGuess", 2);
     map.insert("/Board/minWheelCount", MIN_WHEEL_COUNT);
-    map.insert("/Board/pieceTheme", "merida");
-    map.insert("/Board/pieceEffect", 2);
-    map.insert("/Board/boardTheme", "brazilwood");
+    map.insert("/Board/pieceTheme", "cburnett");
+    map.insert("/Board/pieceEffect", 0);              // flat, no drop shadow
+    map.insert("/Board/boardTheme", "");              // plain colours, not a texture
     map.insert("/Board/AutoPlayerInterval", 3000);
     map.insert("/Board/AutoSaveAndContinue", false);
     map.insert("/Board/BackwardAnalysis", false);
@@ -327,7 +443,7 @@ QMap<QString, QVariant> Settings::initDefaultValues() const
     map.insert("/Board/AlwaysScale", false);
     map.insert("/Board/PlayerTurnBoard", "");
     map.insert("/Board/ReadAhead", 4);
-    map.insert("/Board/Background", true);
+    map.insert("/Board/Background", false);           // the board is the subject
 
     map.insert("/Match/Mode", 0);
     map.insert("/Match/TotalTime", 3000);

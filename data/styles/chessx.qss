@@ -203,6 +203,26 @@ QListWidget#SettingsSearchResults::item:hover {
 }
 
 /* --------------------------------------------------------------------------
+   Player cards
+   -------------------------------------------------------------------------- */
+
+QWidget#PlayerCard {
+    background: @surface;
+    border: 1px solid @line;
+    border-radius: @radius-md;
+}
+
+QWidget#PlayerCard[active="true"] {
+    border-color: @accent;
+    background: @accent-wash;
+}
+
+QLabel#PlayerCardName {
+    color: @ink;
+    background: transparent;
+}
+
+/* --------------------------------------------------------------------------
    Home dashboard
    -------------------------------------------------------------------------- */
 
@@ -748,6 +768,26 @@ QTableCornerButton::section {
     border: none;
     border-right: 1px solid @line;
     border-bottom: 1px solid @line;
+}
+
+/* --------------------------------------------------------------------------
+   Opening tree
+   -------------------------------------------------------------------------- */
+
+QTableView#OpeningTree {
+    background: @surface;
+    alternate-background-color: @ground;
+    border: 1px solid @line;
+    border-radius: @radius-md;
+}
+
+QTableView#OpeningTree::item {
+    padding: 3px @space2;
+}
+
+QTableView#OpeningTree::item:selected {
+    background: @accent-wash;
+    color: @accent;
 }
 
 /* --------------------------------------------------------------------------

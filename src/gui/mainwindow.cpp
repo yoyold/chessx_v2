@@ -85,6 +85,7 @@
 #include "homeview.h"
 #include "navrail.h"
 #include "toasthost.h"
+#include "vectoricons.h"
 #include "qt6compat.h"
 
 template< typename T, std::size_t N >
@@ -111,7 +112,8 @@ MainWindow::MainWindow() : QMainWindow(),
     m_bEvalRequested(false),
     m_lastMessageWasHint(false),
     m_readAhead(0),
-    m_breakpoint(-1)
+    m_breakpoint(-1),
+    m_homeDismissable(false)
 {
     setObjectName("MainWindow");
     m_registry = new DatabaseRegistry();
@@ -372,6 +374,9 @@ MainWindow::MainWindow() : QMainWindow(),
     DockWidgetEx* openingDock = new DockWidgetEx(tr("Opening Tree"), this);
     openingDock->setObjectName("OpeningTreeDock");
     m_openingTreeWidget = new OpeningTreeWidget(this);
+    /* Every other dock declares a minimum; without one this panel is squeezed
+       until its controls overlap. */
+    m_openingTreeWidget->setMinimumSize(260, 240);
     openingDock->setWidget(m_openingTreeWidget);
     addDockWidget(Qt::RightDockWidgetArea, openingDock);
     m_menuView->addAction(openingDock->toggleViewAction());
@@ -581,6 +586,8 @@ MainWindow::MainWindow() : QMainWindow(),
     loadFileFavorites();
     slotUpdateOpeningTreeWidget();
 
+    QTimer::singleShot(0, this, [this]() { m_homeDismissable = true; });
+
     qApp->installEventFilter(this);
     /* Activate clipboard */
     slotDatabaseChanged();
@@ -766,6 +773,17 @@ void MainWindow::setupHomeView()
 
     /* Keep the dashboard current without it having to poll. */
     connect(this, SIGNAL(signalDatabaseOpenClose()), SLOT(slotRefreshHome()));
+
+    /* Any game reaching the board means the user is past the dashboard. The
+       guard keeps the initial empty clipboard game from dismissing it before
+       it has even been seen. */
+    connect(this, &MainWindow::signalGameLoaded, this, [this]()
+    {
+        if (m_homeDismissable)
+        {
+            slotShowBoard();
+        }
+    });
 
     slotRefreshHome();
 
@@ -2008,7 +2026,9 @@ QAction* MainWindow::createAction(QObject* parent, QString name, const char* slo
 QAction* MainWindow::createAction(QString name, const char* slot, const QKeySequence& key, QToolBar* pToolBar, QString image,
                                   const QString& tip, QAction::MenuRole menuRole, QObject* parent)
 {
-    return createAction(name, slot, key, pToolBar, QIcon(image), tip, menuRole, parent);
+    /* Route through the drawn icon set; VectorIcons falls back to the original
+       pixmap for anything it has no glyph for. */
+    return createAction(name, slot, key, pToolBar, VectorIcons::iconFor(image), tip, menuRole, parent);
 }
 
 QAction* MainWindow::createAction(QString name, const char* slot, const QKeySequence& key, QToolBar* pToolBar, QIcon icon,

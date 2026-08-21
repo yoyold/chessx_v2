@@ -21,13 +21,13 @@
 
 #ifdef Q_OS_MAC
 #define MIN_WHEEL_COUNT 120
-#define DEFAULT_FONTSIZE 12
+#define DEFAULT_FONTSIZE 13
 #define DEFAULT_ICONSIZE 2
 #define DEFAULT_LISTFONTSIZE 12
 #else
 #define MIN_WHEEL_COUNT 0
 #define DEFAULT_ICONSIZE 2
-#define DEFAULT_FONTSIZE 10
+#define DEFAULT_FONTSIZE 11
 #define DEFAULT_LISTFONTSIZE 10
 #endif
 
@@ -40,6 +40,18 @@ public:
     Settings();
     Settings(const QString &fileName);
     void initialize();
+    /** Brings an existing profile forward to the current defaults.
+        Only values still sitting at a known previous default are rewritten, so
+        anything the user chose deliberately survives. */
+    /** Bump whenever a new migration step is added below. */
+    enum { SettingsVersion = 2 };
+
+    void migrate();
+    /** Moves pre-redesign game text colours and font size forward. */
+    void migrateGameText();
+    /** Moves a pre-redesign board (wood texture, shaded pieces, photo backdrop)
+        onto the flat default. */
+    void migrateBoardAppearance();
     virtual ~Settings();
 
 public: // Extension Interface for GUI applications

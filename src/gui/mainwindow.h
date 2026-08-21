@@ -740,6 +740,9 @@ private:
     QPointer<CommandPalette> m_commandPalette;
     QPointer<ToastHost> m_toastHost;
     QPointer<HomeView> m_homeView;
+    /** False until start-up finishes, so the dashboard is not closed by the
+        empty game that is loaded while the window is being built. */
+    bool m_homeDismissable;
     /** Stacks the board tabs and the dashboard in the centre of the window. */
     QPointer<QStackedWidget> m_centerStack;
     /** Last responsive breakpoint applied, so a resize only acts on a change. */

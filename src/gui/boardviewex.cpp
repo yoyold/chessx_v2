@@ -7,6 +7,7 @@
 
 #include "boardview.h"
 #include "evalbar.h"
+#include "playercard.h"
 #include "settings.h"
 
 #include <QHBoxLayout>
@@ -19,6 +20,8 @@
 BoardViewEx::BoardViewEx(QWidget *parent) :
     QWidget(parent),
     m_evalBar(nullptr),
+    m_cardTop(nullptr),
+    m_cardBottom(nullptr),
     ui(new Ui::BoardViewEx)
 {
     ui->setupUi(this);
@@ -36,6 +39,14 @@ BoardViewEx::BoardViewEx(QWidget *parent) :
     ui->verticalLayout->addLayout(boardRow);
     m_evalBar->setVisible(AppSettings->getValue("/Board/showEvalBar").toBool());
 
+    /* The bands above and below the board were empty unless a clock was shown,
+       which is a lot of room to spend on nothing while the game header sat in
+       another panel entirely. */
+    m_cardTop = new PlayerCard(Black, this);
+    m_cardBottom = new PlayerCard(White, this);
+    ui->topLayout->insertWidget(0, m_cardTop, 1);
+    ui->bottomLayout->insertWidget(0, m_cardBottom, 1);
+
     connect(boardView(), SIGNAL(signalFlipped(bool,bool)), SLOT(boardIsFlipped(bool,bool)));
     setMouseTracking(true);
     showTime(false);
@@ -51,6 +62,36 @@ BoardViewEx::~BoardViewEx()
 EvalBar* BoardViewEx::evalBar()
 {
     return m_evalBar;
+}
+
+void BoardViewEx::setPlayers(const QString& white, const QString& whiteElo,
+                             const QString& black, const QString& blackElo)
+{
+    const bool flipped = ui->boardView->isFlipped();
+    /* The bottom card always belongs to the side nearest the viewer. */
+    PlayerCard* nearCard = flipped ? m_cardTop : m_cardBottom;
+    PlayerCard* farCard = flipped ? m_cardBottom : m_cardTop;
+    if (!nearCard || !farCard)
+    {
+        return;
+    }
+    nearCard->setColor(White);
+    farCard->setColor(Black);
+    nearCard->setPlayer(white, whiteElo);
+    farCard->setPlayer(black, blackElo);
+}
+
+void BoardViewEx::setSideToMove(Color color)
+{
+    if (!m_cardTop || !m_cardBottom)
+    {
+        return;
+    }
+    const bool flipped = ui->boardView->isFlipped();
+    PlayerCard* whiteCard = flipped ? m_cardTop : m_cardBottom;
+    PlayerCard* blackCard = flipped ? m_cardBottom : m_cardTop;
+    whiteCard->setActive(color == White);
+    blackCard->setActive(color == Black);
 }
 
 void BoardViewEx::resizeEvent(QResizeEvent* e)

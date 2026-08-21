@@ -330,10 +330,12 @@ HEADERS += src/database/board.h \
   src/gui/designtokens.h \
   src/gui/commandpalette.h \
   src/gui/toasthost.h \
+  src/gui/vectoricons.h \
   src/gui/evalbar.h \
   src/dialogs/settingssearch.h \
   src/gui/homeview.h \
   src/gui/navrail.h \
+  src/gui/playercard.h \
   src/gui/style.h \
   src/gui/tableview.h \
   src/gui/testadapter.h \
@@ -509,10 +511,12 @@ SOURCES += \
   src/gui/designtokens.cpp \
   src/gui/commandpalette.cpp \
   src/gui/toasthost.cpp \
+  src/gui/vectoricons.cpp \
   src/gui/evalbar.cpp \
   src/dialogs/settingssearch.cpp \
   src/gui/homeview.cpp \
   src/gui/navrail.cpp \
+  src/gui/playercard.cpp \
   src/gui/style.cpp \
   src/gui/tableview.cpp \
   src/gui/testadapter.cpp \
@@ -539,11 +543,19 @@ INCLUDEPATH += src/dialogs
 INCLUDEPATH += src/quazip
 INCLUDEPATH += $$[QT_INSTALL_PREFIX]/src/3rdparty/zlib
 
-win32 {
+win32-g++ {
+  # MinGW ships its own zlib, and quazip needs the gz* file helpers.
+  # Qt's bundled QtZlib headers define Z_PREFIX (renaming gzopen to z_gzopen),
+  # but Qt Core exports only the prefixed deflate/inflate family - not the gz*
+  # helpers - while libz.a exports them unprefixed. Compiling against Qt's
+  # headers and linking against libz.a therefore fails with undefined
+  # references to __imp_z_gzopen and friends. Using MinGW's own zlib headers
+  # keeps both sides of the build consistent.
+  LIBS += -lz
+} else:win32 {
   # DEFINES += ZLIB_WINAPI
   # LIBS += -lz
   INCLUDEPATH += $$[QT_INSTALL_HEADERS]/QtZlib
-  win32-g++:LIBS += -lz
 }
 
 UI_DIR = src/generated

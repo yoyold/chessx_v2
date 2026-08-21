@@ -3,6 +3,8 @@
 ****************************************************************************/
 
 #include "openingtreewidget.h"
+
+#include <QHeaderView>
 #include "ui_openingtreewidget.h"
 
 #include <QFileInfo>
@@ -52,6 +54,15 @@ OpeningTreeWidget::OpeningTreeWidget(QWidget *parent) :
     HTMLItemDelegate* htmlItemDelegate = new HTMLItemDelegate(this);
     ui->OpeningTreeView->setItemDelegate(htmlItemDelegate);
 
+    /* Readability: rows that are tall enough to scan, no row-number gutter, and
+       the move column always visible however narrow the panel gets. */
+    ui->OpeningTreeView->verticalHeader()->setVisible(false);
+    ui->OpeningTreeView->verticalHeader()->setDefaultSectionSize(22);
+    ui->OpeningTreeView->setAlternatingRowColors(true);
+    ui->OpeningTreeView->setShowGrid(false);
+    ui->OpeningTreeView->horizontalHeader()->setStretchLastSection(true);
+    ui->OpeningTreeView->horizontalHeader()->setHighlightSections(false);
+
     connect(ui->OpeningTreeView, SIGNAL(clicked(QModelIndex)), parent, SLOT(slotSearchTreeMove(QModelIndex)));
     connect(m_openingTree, SIGNAL(progress(int)), this, SLOT(slotOperationProgress(int)));
     connect(m_openingTree, SIGNAL(openingTreeUpdated()), this, SLOT(slotTreeUpdate()));
@@ -61,7 +72,9 @@ OpeningTreeWidget::OpeningTreeWidget(QWidget *parent) :
     connect(ui->filterGames, SIGNAL(clicked(bool)), this, SLOT(slotFilterClicked(bool)));
     m_openingBoardView = new BoardView(this, BoardView::IgnoreSideToMove | BoardView::SuppressGuessMove);
     m_openingBoardView->setObjectName("OpeningBoardView");
-    m_openingBoardView->setMinimumSize(200, 200);
+    /* A narrow side panel has to fit the move table too; 200px of preview left
+       nothing for it. */
+    m_openingBoardView->setMinimumSize(140, 140);
     ui->OpeningBoardWidget->addWidget(m_openingBoardView, 1);
     m_openingBoardView->configure();
     m_openingBoardView->setEnabled(false);

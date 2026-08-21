@@ -54,8 +54,8 @@ const TokenEntry s_tokens[DesignTokens::RoleEndEntry] =
     { "mistake",         "#df7b46", "#b4541f" },
     { "blunder",         "#cf5546", "#a83226" },
 
-    { "board-light",     "#d9cbb0", "#ede3d2" },
-    { "board-dark",      "#6e8259", "#8fa47b" },
+    { "board-light",     "#dfe3c4", "#e8ecd2" },
+    { "board-dark",      "#6a854a", "#7d9a5c" },
     { "board-last-move", "#dfa34e", "#e0aa5c" },
     { "board-selected",  "#43ada5", "#1b7a73" },
     { "board-legal",     "#1a1712", "#26211b" },

@@ -449,6 +449,8 @@ add_library(gui STATIC
   gui/commandpalette.h
   gui/toasthost.cpp
   gui/toasthost.h
+  gui/vectoricons.cpp
+  gui/vectoricons.h
   gui/evalbar.cpp
   gui/evalbar.h
   dialogs/settingssearch.cpp
@@ -457,6 +459,8 @@ add_library(gui STATIC
   gui/homeview.h
   gui/navrail.cpp
   gui/navrail.h
+  gui/playercard.cpp
+  gui/playercard.h
   gui/style.cpp
   gui/style.h
   gui/tableview.cpp

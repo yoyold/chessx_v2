@@ -288,8 +288,8 @@ void ChessXSettings::initWidgetValues(QMap<QString, QVariant>& map) const
 {
     /* Defaults follow the design tokens in DesignTokens; all remain editable
        under Preferences > Board > Colors. */
-    map.insert("/Board/lightColor", QColor("#d9cbb0"));          // board-light
-    map.insert("/Board/darkColor", QColor("#6e8259"));           // board-dark
+    map.insert("/Board/lightColor", QColor("#dfe3c4"));          // board-light
+    map.insert("/Board/darkColor", QColor("#6a854a"));           // board-dark
     map.insert("/Board/highlightColor", QColor("#43ada5"));      // accent - selection
     map.insert("/Board/frameColor", QColor("#3a342c"));          // line
     map.insert("/Board/coordColor", QColor("#efe9df"));          // ink

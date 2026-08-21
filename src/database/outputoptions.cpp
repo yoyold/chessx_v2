@@ -12,6 +12,27 @@
 
 #include <QRegularExpression>
 
+#include <QColor>
+
+namespace
+{
+/** @return the colour behind @p key as "#rrggbb", whichever way it was stored.
+    Older profiles hold a serialised QColor here, newer ones a plain string;
+    QVariant::toString() returns nothing for the former, which would drop the
+    colour from the generated stylesheet entirely. */
+QString colorSetting(const QString& key)
+{
+    const QVariant v = AppSettings->getValue(key);
+    const QColor c = v.value<QColor>();
+    if (c.isValid())
+    {
+        return c.name();
+    }
+    return v.toString();
+}
+} // namespace
+
+
 #if defined(_MSC_VER) && defined(_DEBUG)
 #define DEBUG_NEW new( _NORMAL_BLOCK, __FILE__, __LINE__ )
 #define new DEBUG_NEW
@@ -61,11 +82,11 @@ bool OutputOptions::createDefaultOptions(QString path)
         createOption("VariationIndentSize", "1:10", AppSettings->getValue("VariationIndentSize").toInt(), tr("Variation Indentation"));
         createOption("CommentIndent", String, "Always|OnlyMainline|Never", AppSettings->getValue("CommentIndent").toString(), tr("Comment Indentation"));
 
-        createOption("MainLineMoveColor", AppSettings->getValue("MainLineMoveColor").toString(), tr("Main Line Color"));
-        createOption("VariationColor", AppSettings->getValue("VariationColor").toString(), tr("Variation Color"));
-        createOption("CommentColor", AppSettings->getValue("CommentColor").toString(), tr("Comment Color"));
-        createOption("NagColor", AppSettings->getValue("NagColor").toString(), tr("NAG Color"));
-        createOption("HeaderColor", AppSettings->getValue("HeaderColor").toString(), tr("Header Color"));
+        createOption("MainLineMoveColor", colorSetting("MainLineMoveColor"), tr("Main Line Color"));
+        createOption("VariationColor", colorSetting("VariationColor"), tr("Variation Color"));
+        createOption("CommentColor", colorSetting("CommentColor"), tr("Comment Color"));
+        createOption("NagColor", colorSetting("NagColor"), tr("NAG Color"));
+        createOption("HeaderColor", colorSetting("HeaderColor"), tr("Header Color"));
         createOption("ShowHeader", AppSettings->getValue("ShowHeader").toBool(), tr("Show Header"));
 
         createOption("ShowDiagrams", AppSettings->getValue("ShowDiagrams").toBool(), tr("Show Diagrams"));
