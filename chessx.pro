@@ -256,6 +256,7 @@ HEADERS += src/database/board.h \
   src/dialogs/renametagdialog.h \
   src/dialogs/savedialog.h \
   src/dialogs/studyselectiondialog.h \
+  src/dialogs/tabanchor.h \
   src/dialogs/tagdialog.h \
   src/dialogs/tournamentselectiondialog.h \
   src/guess/guess.h \

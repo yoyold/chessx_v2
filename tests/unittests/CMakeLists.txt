@@ -20,7 +20,13 @@ add_test(NAME unit.doctest COMMAND doctestrunner)
 # Qt Test unit tests
 #
 
+# define_qttest_test(<test name> <executable name> [GUI] <fixture>...)
+#
+# GUI adds the QApplication the fixtures need to create widgets, and runs the
+# test on the offscreen platform plugin unless told otherwise.
 function(define_qttest_test test_name exec_name)
+  cmake_parse_arguments(ARG "GUI" "" "" ${ARGN})
+
   add_executable(${exec_name}
     ${CMAKE_CURRENT_BINARY_DIR}/resourcepath.h
   )
@@ -28,7 +34,7 @@ function(define_qttest_test test_name exec_name)
 
   set(includes)
   set(fixtures)
-  foreach(fixture ${ARGN})
+  foreach(fixture ${ARG_UNPARSED_ARGUMENTS})
     string(TOLOWER ${fixture} fixture_lower)
     # source files base name
     set(base_name ${fixture_lower}test)
@@ -40,6 +46,19 @@ function(define_qttest_test test_name exec_name)
     string(APPEND includes "#include \"${base_name}.h\"\n")
     string(APPEND fixtures "    FIXTURE(${type_name});\n")
   endforeach()
+
+  set(app_includes)
+  set(app_setup)
+  if (ARG_GUI)
+    set(app_includes "#include <QApplication>")
+    set(app_setup [[    if (qEnvironmentVariableIsEmpty("QT_QPA_PLATFORM"))
+    {
+        qputenv("QT_QPA_PLATFORM", "offscreen");
+    }
+    QApplication app(argc, argv);
+    Q_UNUSED(app);
+]])
+  endif()
 
   configure_file(qttestmain.cpp.in ${exec_name}.cpp)
   target_sources(${exec_name} PRIVATE
@@ -53,6 +72,12 @@ function(define_qttest_test test_name exec_name)
   )
   target_link_libraries(${exec_name} PRIVATE Qt5::Test ${COMMON_DEPENDENCIES})
 
+  if (ARG_GUI)
+    # widget tests reach into the dialog sources for the code under test
+    target_include_directories(${exec_name} PRIVATE ${CMAKE_SOURCE_DIR}/src/dialogs)
+    target_link_libraries(${exec_name} PRIVATE Qt5::Widgets)
+  endif()
+
   add_test(NAME ${test_name} COMMAND ${exec_name})
 endfunction()
 
@@ -64,5 +89,9 @@ define_qttest_test(unit.qttest qttestrunner
   PlayerDatabase
   PositionSearch
   SpellChecker
+)
+
+define_qttest_test(unit.qtguitest qtguitestrunner GUI
+  TabAnchor
 )
 

@@ -320,6 +320,7 @@ add_library(gui STATIC
   dialogs/studyselectiondialog.cpp
   dialogs/studyselectiondialog.h
   dialogs/studyselectiondialog.ui
+  dialogs/tabanchor.h
   dialogs/tagdialog.cpp
   dialogs/tagdialog.h
   dialogs/tagdialog.ui

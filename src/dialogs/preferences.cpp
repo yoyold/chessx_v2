@@ -17,6 +17,7 @@
 #include "chessxsettings.h"
 #include "colorlist.h"
 #include "preferences.h"
+#include "tabanchor.h"
 #include "settings.h"
 #include "messagedialog.h"
 #include "engineoptiondialog.h"
@@ -157,16 +158,10 @@ void PreferencesDialog::setAnchor(QString anchor)
                 layout->addWidget(label);
             }
 
-            QObject* parent = widget->parent();
-            while (parent)
+            int index = tabPageIndexOf(widget, ui.tabWidget);
+            if (index >= 0)
             {
-                QWidget* tab = qobject_cast<QWidget*>(parent);
-                if (tab && tab->objectName().startsWith("tab"))
-                {
-                    s_lastIndex = ui.tabWidget->indexOf(tab);
-                    break;
-                }
-                parent = widget->parent();
+                s_lastIndex = index;
             }
         }
     }

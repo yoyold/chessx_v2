@@ -1,4 +1,5 @@
 #include <QtTest>
+${app_includes}
 
 ${includes}
 
@@ -6,7 +7,7 @@ ${includes}
 
 int main(int argc, char** argv)
 {
-    int retc = 0;
+${app_setup}    int retc = 0;
 
 ${fixtures}
     return retc;
