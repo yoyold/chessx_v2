@@ -24,6 +24,9 @@ public:
     void setValues(int line, const QList<double> &values);
     /** Sets how @p line is anchored. Must be called before setValues(). */
     void setBaseline(int line, Baseline baseline);
+    /** Fixes the full-scale value for @p line; values beyond it saturate.
+        Pass 0 to scale to the data instead. Must be called before setValues(). */
+    void setRange(int line, double maxAbs);
     void setPly(int ply);
 
 signals:
@@ -51,6 +54,7 @@ private:
     QVector<QPolygonF> m_polygon;
     QVector<QList<double>> m_values;
     QVector<int> m_baselines;
+    QVector<double> m_ranges;
     int m_ply;
     double m_plyIndicator;
     int m_lastSentIndicator;

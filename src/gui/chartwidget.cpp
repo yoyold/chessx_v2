@@ -42,6 +42,15 @@ void ChartWidget::setBaseline(int line, Baseline baseline)
     m_baselines[line] = baseline;
 }
 
+void ChartWidget::setRange(int line, double maxAbs)
+{
+    while (m_ranges.size() <= line)
+    {
+        m_ranges.append(0.0);
+    }
+    m_ranges[line] = maxAbs;
+}
+
 void ChartWidget::setValues(int line, const QList<double>& values)
 {
     if (line >= m_values.size())
@@ -95,9 +104,9 @@ void ChartWidget::paintEvent(QPaintEvent*)
             continue;
         }
 
-        /* The first series is the game itself; any further series are secondary
-           and step back in weight. */
-        const bool primary = (i == 0);
+        /* Series 1 is the evaluation - the course of the game, and what the
+           graph exists to show. Material (0) and time spent (2) are context. */
+        const bool primary = (i == 1);
         QColor line = primary ? DesignTokens::color(DesignTokens::Accent)
                               : DesignTokens::color(DesignTokens::Muted);
         QColor fill = line;
@@ -138,15 +147,17 @@ void ChartWidget::paintEvent(QPaintEvent*)
     painter.setPen(cursor);
     painter.drawLine(QPointF(m_plyIndicator, 0), QPointF(m_plyIndicator, height()));
 
-    if (!m_polygon.isEmpty())
+    /* The dot sits on the evaluation trace, which is the emphasised series. */
+    const int dotLine = (m_polygon.count() > 1) ? 1 : 0;
+    if (dotLine < m_polygon.count())
     {
-        const QPolygonF& first = m_polygon.at(0);
-        const int index = qBound(1, static_cast<int>(m_ply) + 1, first.count() - 2);
-        if (first.count() > 2)
+        const QPolygonF& trace = m_polygon.at(dotLine);
+        if (trace.count() > 2)
         {
+            const int index = qBound(1, static_cast<int>(m_ply) + 1, trace.count() - 2);
             painter.setPen(Qt::NoPen);
             painter.setBrush(DesignTokens::color(DesignTokens::Accent));
-            painter.drawEllipse(first[index], 3.0, 3.0);
+            painter.drawEllipse(trace[index], 3.0, 3.0);
         }
     }
 
@@ -236,11 +247,16 @@ void ChartWidget::updatePolygon(int line)
     polygon.clear();
     if (values.count()>1)
     {
-        double max = 0;
-        foreach(double d, values)
+        /* A fixed full-scale value where one was given, so the shape of the
+           game does not change every time a new extreme appears. */
+        double max = (line < m_ranges.size()) ? m_ranges.at(line) : 0.0;
+        if (max <= 0.0)
         {
-            double absd = std::abs(d);
-            if (absd > max) max = absd;
+            foreach(double d, values)
+            {
+                double absd = std::abs(d);
+                if (absd > max) max = absd;
+            }
         }
 
         const bool onFloor = (line < m_baselines.size()) && (m_baselines.at(line) == Bottom);
@@ -256,7 +272,8 @@ void ChartWidget::updatePolygon(int line)
         int i = 0;
         foreach(double d, values)
         {
-            polygon<<QPointF(multiplierW*i, -d*multiplierH + zero);
+            const double clamped = qBound(-max, d, max);
+            polygon<<QPointF(multiplierW*i, -clamped*multiplierH + zero);
             ++i;
         }
         if (i)

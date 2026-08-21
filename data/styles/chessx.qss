@@ -203,6 +203,50 @@ QListWidget#SettingsSearchResults::item:hover {
 }
 
 /* --------------------------------------------------------------------------
+   Game report
+   -------------------------------------------------------------------------- */
+
+QDialog#GameReport {
+    background: @ground;
+}
+
+QFrame#ReportCard {
+    background: @surface;
+    border: 1px solid @line;
+    border-radius: @radius-lg;
+}
+
+QLabel#ReportTitle {
+    color: @ink;
+    font-size: 16pt;
+    font-weight: 600;
+}
+
+QLabel#ReportName {
+    color: @ink;
+    font-size: 11pt;
+    font-weight: 600;
+}
+
+QLabel#ReportAccuracy {
+    color: @accent;
+    font-size: 30pt;
+    font-weight: 600;
+}
+
+QLabel#ReportCaption, QLabel#ReportCountLabel {
+    color: @muted;
+}
+
+QLabel#ReportNote {
+    color: @ink-2;
+    background: @raised;
+    border: 1px solid @line;
+    border-radius: @radius-md;
+    padding: @space3;
+}
+
+/* --------------------------------------------------------------------------
    Player cards
    -------------------------------------------------------------------------- */
 

@@ -54,6 +54,9 @@ public:
     int flags() const;
     /** Update and shows current position. */
     void setBoard(const BoardX& value, Square from = InvalidSquare, Square to = InvalidSquare, bool atLineEnd = true);
+    /** Marks the move just played with a quality badge on its destination
+        square. Pass NullNag to clear it. */
+    void setMoveQuality(int nag);
     /** @return displayed position. */
     BoardX board() const;
     /** @return current theme */
@@ -222,6 +225,8 @@ private:
     void drawStateLayer(QPaintEvent* event);
     /** Dots on empty legal targets, rings on capturable ones. */
     void drawLegalMoves(QPaintEvent* event);
+    /** The !/?? badge on the square the last move arrived at. */
+    void drawMoveQuality(QPaintEvent* event);
     /** Recomputes m_legalTargets for the square a move would be made from. */
     void updateLegalMoves(Square from);
     /** @return the square a move is currently being made from: the drag origin
@@ -273,6 +278,8 @@ private:
     QList<Square> m_legalTargets;
     /** Square m_legalTargets was computed for. */
     Square m_legalFrom;
+    /** NAG describing the quality of the move that produced this position. */
+    int m_moveQuality;
     bool m_modernStyle;
     bool m_showLegalMoves;
     bool m_animateMoves;

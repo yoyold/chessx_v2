@@ -145,6 +145,8 @@ protected:
     void slotNavigate(int destination);
     /** Opens the searchable command palette. */
     void slotCommandPalette();
+    /** Summarises the current game: accuracy and move quality per side. */
+    void slotGameReport();
     /** Raises a transient notification over the window. */
     void slotToast(const QString& text, int severity);
     /** Shows the dashboard page. */

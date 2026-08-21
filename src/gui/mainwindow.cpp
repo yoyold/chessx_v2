@@ -82,6 +82,7 @@
 
 #include "commandpalette.h"
 #include "evalbar.h"
+#include "gamereport.h"
 #include "homeview.h"
 #include "navrail.h"
 #include "toasthost.h"
@@ -913,6 +914,12 @@ void MainWindow::slotToast(const QString& text, int severity)
     {
         m_toastHost->showToast(text, static_cast<ToastHost::Severity>(severity));
     }
+}
+
+void MainWindow::slotGameReport()
+{
+    GameReport dialog(GameReport::analyse(game()), this);
+    dialog.exec();
 }
 
 void MainWindow::slotCommandPalette()
@@ -2473,6 +2480,10 @@ void MainWindow::setupActions()
     connect(this, SIGNAL(signalMoveHasParent(bool)), backToMainLine, SLOT(setEnabled(bool)));
     goMenu->addAction(backToMainLine);
 
+    gameMenu->addSeparator();
+
+    gameMenu->addAction(createAction(tr("Game report..."), SLOT(slotGameReport()),
+                                     Qt::CTRL | Qt::SHIFT | Qt::Key_G));
     gameMenu->addSeparator();
 
     QMenu* refactorMenu = gameMenu->addMenu(tr("Refactor"));

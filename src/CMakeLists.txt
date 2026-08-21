@@ -455,6 +455,8 @@ add_library(gui STATIC
   gui/evalbar.h
   dialogs/settingssearch.cpp
   dialogs/settingssearch.h
+  gui/gamereport.cpp
+  gui/gamereport.h
   gui/homeview.cpp
   gui/homeview.h
   gui/navrail.cpp

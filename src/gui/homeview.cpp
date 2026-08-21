@@ -32,7 +32,7 @@ QString gamesLabel(quint64 games)
     {
         return QObject::tr("empty");
     }
-    return QObject::tr("%n game(s)", "", static_cast<int>(qMin<quint64>(games, INT_MAX)));
+    return QObject::tr("%1 games").arg(games);
 }
 
 } // namespace

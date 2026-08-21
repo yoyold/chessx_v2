@@ -15,6 +15,8 @@
  ***************************************************************************/
 
 #include "boardview.h"
+#include "designtokens.h"
+#include "nag.h"
 #include "GameMimeData.h"
 #include "settings.h"
 #include "guess.h"
@@ -41,6 +43,7 @@ BoardView::BoardView(QWidget* parent, int flags) : QWidget(parent),
     m_guessMove(false), m_showThreat(false), m_showTargets(false), m_brushMode(false), m_selectedSquare(InvalidSquare),
     m_hoverSquare(InvalidSquare),
     m_legalFrom(InvalidSquare),
+    m_moveQuality(0),
     m_modernStyle(true),
     m_showLegalMoves(true),
     m_animateMoves(true),
@@ -143,6 +146,16 @@ void BoardView::setBoard(const BoardX& value, Square from, Square to, bool atLin
     }
     updateThreat();
     repaint();
+}
+
+void BoardView::setMoveQuality(int nag)
+{
+    if (m_moveQuality == nag)
+    {
+        return;
+    }
+    m_moveQuality = nag;
+    update();
 }
 
 void BoardView::setStoredMove(Square from, Square to)
@@ -489,6 +502,56 @@ void BoardView::updateLegalMoves(Square from)
     }
 }
 
+void BoardView::drawMoveQuality(QPaintEvent* event)
+{
+    if (m_moveQuality == 0 || m_currentTo == InvalidSquare || !isEnabled())
+    {
+        return;
+    }
+
+    /* Only the six judgements a reader recognises at a glance; the remaining
+       NAGs describe the position rather than the move. */
+    QString glyph;
+    DesignTokens::Role role = DesignTokens::Good;
+    switch (m_moveQuality)
+    {
+    case VeryGoodMove:      glyph = "!!"; role = DesignTokens::Good;       break;
+    case GoodMove:          glyph = "!";  role = DesignTokens::Good;       break;
+    case SpeculativeMove:   glyph = "!?"; role = DesignTokens::Accent;     break;
+    case QuestionableMove:  glyph = "?!"; role = DesignTokens::Inaccuracy; break;
+    case PoorMove:          glyph = "?";  role = DesignTokens::Mistake;    break;
+    case VeryPoorMove:      glyph = "??"; role = DesignTokens::Blunder;    break;
+    default:
+        return;
+    }
+
+    const QRect square = squareRect(m_currentTo);
+    if (!event->region().intersects(square))
+    {
+        return;
+    }
+
+    const int side = m_theme.size().width();
+    const int d = qMax(14, side / 3);
+    /* Top-right of the square, overlapping the edge, so it never hides the
+       piece it is describing. */
+    const QRect badge(square.right() - d * 2 / 3, square.top() - d / 3, d, d);
+
+    QPainter p(this);
+    p.setRenderHint(QPainter::Antialiasing);
+
+    p.setPen(QPen(DesignTokens::color(DesignTokens::Ground), qMax(1.0, d / 12.0)));
+    p.setBrush(DesignTokens::color(role));
+    p.drawEllipse(badge);
+
+    QFont f = font();
+    f.setBold(true);
+    f.setPixelSize(qMax(7, d / 2));
+    p.setFont(f);
+    p.setPen(DesignTokens::color(DesignTokens::Ground));
+    p.drawText(badge, Qt::AlignCenter, glyph);
+}
+
 Square BoardView::moveOriginSquare() const
 {
     if (m_dragged != Empty && m_dragStartSquare != InvalidSquare)
@@ -747,6 +810,7 @@ void BoardView::paintEvent(QPaintEvent* event)
     if (m_modernStyle)
     {
         drawLegalMoves(event);
+        drawMoveQuality(event);
     }
     drawHiliting(event);
     drawMoveIndicator(event);

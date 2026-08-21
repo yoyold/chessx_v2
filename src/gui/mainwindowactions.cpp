@@ -1341,6 +1341,19 @@ void MainWindow::moveChanged()
 
     // Set board first
     m_boardView->setBoard(g.board(), m_currentFrom, m_currentTo, game().atLineEnd());
+
+    /* Badge the move just played with its own judgement, if it has one. */
+    int quality = 0;
+    const NagSet moveNags = g.nags(m);
+    foreach (Nag nag, moveNags)
+    {
+        if (NagSet::isMoveNag(nag))
+        {
+            quality = nag;
+            break;
+        }
+    }
+    m_boardView->setMoveQuality(quality);
     UpdateAnnotationView();
 
     m_currentFrom = InvalidSquare;

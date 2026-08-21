@@ -105,10 +105,12 @@ void AnalysisWidget::setHideLines(bool newHideLines)
 
 void AnalysisWidget::applyScoreColors()
 {
-    /* Engine scores follow the semantic ramp rather than the old lime/vermilion,
-       so a line agrees with the evaluation bar and the move list. */
-    Analysis::setScoreColors(DesignTokens::color(DesignTokens::Good).name().mid(1),
-                             DesignTokens::color(DesignTokens::Blunder).name().mid(1));
+    /* One colour for every engine score. Colouring by sign made the top line
+       green and the rest red in the same lost position, which reads as three
+       different kinds of statement instead of one list. The sign already says
+       who stands better, and green/red are reserved for move quality. */
+    const QString accent = DesignTokens::color(DesignTokens::Accent).name().mid(1);
+    Analysis::setScoreColors(accent, accent);
 }
 
 void AnalysisWidget::showContextMenu(const QPoint &pt)
