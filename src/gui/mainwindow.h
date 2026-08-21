@@ -40,6 +40,7 @@ class DatabaseList;
 class DatabaseRegistry;
 class CommandPalette;
 class DockWidgetEx;
+class HomeView;
 class NavRail;
 class ToastHost;
 class DownloadManager;
@@ -59,6 +60,7 @@ class OpeningTreeWidget;
 class PlayerListWidget;
 class QComboBox;
 class QLabel;
+class QStackedWidget;
 class QNetworkAccessManager;
 class QNetworkReply;
 class QProgressBar;
@@ -145,6 +147,12 @@ protected:
     void slotCommandPalette();
     /** Raises a transient notification over the window. */
     void slotToast(const QString& text, int severity);
+    /** Shows the dashboard page. */
+    void slotShowHome();
+    /** Shows the board page, leaving the dashboard. */
+    void slotShowBoard();
+    /** Repopulates the dashboard from the recent files and open databases. */
+    void slotRefreshHome();
     /** Feeds the current board's evaluation bar from the primary engine. */
     void slotEvaluationChanged(int centipawns);
     void slotEvaluationMate(int moves);
@@ -637,6 +645,8 @@ private:
     void raiseDockByName(const QString& objectName);
     /** Applies the layout rules for the window's current width. */
     void applyResponsiveLayout();
+    /** Builds the dashboard page and puts it behind the board tabs. */
+    void setupHomeView();
     /** @return true when the modern shell layout is active. */
     static bool useModernLayout();
 
@@ -729,6 +739,9 @@ private:
     QPointer<NavRail> m_navRail;
     QPointer<CommandPalette> m_commandPalette;
     QPointer<ToastHost> m_toastHost;
+    QPointer<HomeView> m_homeView;
+    /** Stacks the board tabs and the dashboard in the centre of the window. */
+    QPointer<QStackedWidget> m_centerStack;
     /** Last responsive breakpoint applied, so a resize only acts on a change. */
     int m_breakpoint;
     /** Docks hidden by the responsive rule, so they can be restored exactly. */

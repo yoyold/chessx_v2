@@ -168,6 +168,61 @@ QToolButton:disabled {
 }
 
 /* --------------------------------------------------------------------------
+   Home dashboard
+   -------------------------------------------------------------------------- */
+
+QWidget#HomeView, QScrollArea#HomeScroll {
+    background: @ground;
+}
+
+QLabel#HomeTitle {
+    color: @ink;
+    font-size: 26pt;
+    font-weight: 600;
+}
+
+QLabel#HomeSubtitle {
+    color: @muted;
+    font-size: 11pt;
+}
+
+QFrame#HomeCard {
+    background: @surface;
+    border: 1px solid @line;
+    border-radius: @radius-lg;
+}
+
+QLabel#HomeCardTitle {
+    color: @muted;
+    font-weight: 600;
+}
+
+QLabel#HomeContinueName {
+    color: @ink;
+    font-size: 13pt;
+    font-weight: 600;
+}
+
+QLabel#HomeMuted {
+    color: @muted;
+}
+
+QPushButton#HomeRecentEntry {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: @radius-sm;
+    color: @ink-2;
+    padding: 6px @space2;
+    text-align: left;
+}
+
+QPushButton#HomeRecentEntry:hover {
+    background: @raised;
+    border-color: @line;
+    color: @accent;
+}
+
+/* --------------------------------------------------------------------------
    Toasts
 
    Elevation here is one of the few places a shadow would be appropriate, but Qt

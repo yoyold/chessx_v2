@@ -77,10 +77,12 @@
 #include <QStatusBar>
 #include <QTabBar>
 #include <QTimer>
+#include <QStackedWidget>
 #include <QToolBar>
 
 #include "commandpalette.h"
 #include "evalbar.h"
+#include "homeview.h"
 #include "navrail.h"
 #include "toasthost.h"
 #include "qt6compat.h"
@@ -167,8 +169,13 @@ MainWindow::MainWindow() : QMainWindow(),
     m_tabWidget->setUsesScrollButtons(true);
     connect(m_tabWidget, SIGNAL(tabCloseRequested(int)), SLOT(slotCloseTabWidget(int)));
     connect(m_tabWidget, SIGNAL(tabBarClicked(int)), SLOT(slotActivateBoardView(int)));
-    /* Board layout */
-    m_boardSplitter->addWidget(m_tabWidget);
+    /* Board layout. The dashboard is a sibling page of the board tabs rather
+       than a tab of its own: slotActivateBoardView() casts every tab to
+       BoardViewEx without a null check, so a non-board tab would crash it. */
+    m_centerStack = new QStackedWidget(this);
+    m_centerStack->setObjectName("CenterStack");
+    m_centerStack->addWidget(m_tabWidget);
+    m_boardSplitter->addWidget(m_centerStack);
 
     DockWidgetEx* ficsConsoleDock = new DockWidgetEx(tr("FICS Console"), this);
     ficsConsoleDock->setObjectName("FicsCOnsoleDock");
@@ -448,6 +455,7 @@ MainWindow::MainWindow() : QMainWindow(),
     /* Append the FICS console to the view menu */
     m_menuView->addAction(ficsConsoleDock->toggleViewAction());
 
+    setupHomeView();
     setupNavRail();
     m_toastHost = new ToastHost(this);
 
@@ -643,12 +651,11 @@ void MainWindow::slotNavigate(int destination)
     switch (destination)
     {
     case NavRail::Home:
-        /* The dashboard is not built yet; the board is the closest thing to a
-           home surface, so raise it rather than doing nothing. */
-        if (m_tabWidget) m_tabWidget->setFocus();
+        slotShowHome();
         break;
 
     case NavRail::Play:
+        slotShowBoard();
         slotGameNew();
         break;
 
@@ -717,6 +724,94 @@ void MainWindow::setupAnalysisWidget(DockWidgetEx* analysisDock, AnalysisWidget*
         connect(analysis, SIGNAL(evaluationChanged(int)), SLOT(slotEvaluationChanged(int)));
         connect(analysis, SIGNAL(evaluationMate(int)), SLOT(slotEvaluationMate(int)));
         connect(analysis, SIGNAL(evaluationCleared()), SLOT(slotEvaluationCleared()));
+    }
+}
+
+void MainWindow::setupHomeView()
+{
+    if (!useModernLayout() || !m_centerStack)
+    {
+        return;
+    }
+
+    m_homeView = new HomeView(this);
+    m_centerStack->addWidget(m_homeView);
+
+    connect(m_homeView, &HomeView::requestOpenDatabase, this, [this](const QString& path)
+    {
+        slotShowBoard();
+        openDatabaseUrl(path, false);
+    });
+    connect(m_homeView, &HomeView::requestNewGame, this, [this]()
+    {
+        slotShowBoard();
+        slotGameNew();
+    });
+    connect(m_homeView, &HomeView::requestOpenFile, this, [this]()
+    {
+        slotShowBoard();
+        slotFileOpen();
+    });
+    connect(m_homeView, &HomeView::requestAnalysis, this, [this]()
+    {
+        slotShowBoard();
+        raiseDockByName("AnalysisDock1");
+    });
+    connect(m_homeView, &HomeView::requestOpenings, this, [this]()
+    {
+        slotShowBoard();
+        raiseDockByName("OpeningTreeDock");
+        slotSearchTree();
+    });
+
+    /* Keep the dashboard current without it having to poll. */
+    connect(this, SIGNAL(signalDatabaseOpenClose()), SLOT(slotRefreshHome()));
+
+    slotRefreshHome();
+
+    /* Open on the dashboard when there is nothing to continue on the board. */
+    m_centerStack->setCurrentWidget(m_homeView);
+}
+
+void MainWindow::slotRefreshHome()
+{
+    if (!m_homeView)
+    {
+        return;
+    }
+    QList<HomeView::OpenDatabase> open;
+    if (m_registry)
+    {
+        foreach (DatabaseInfo* dbi, m_registry->databases())
+        {
+            if (!dbi || !dbi->database() || dbi->IsBook())
+            {
+                continue;
+            }
+            HomeView::OpenDatabase entry;
+            entry.name = dbi->displayName();
+            entry.path = dbi->database()->filename();
+            entry.games = dbi->database()->count();
+            open.append(entry);
+        }
+    }
+    m_homeView->refresh(m_recentFiles.items(), open);
+}
+
+void MainWindow::slotShowHome()
+{
+    if (m_centerStack && m_homeView)
+    {
+        slotRefreshHome();
+        m_centerStack->setCurrentWidget(m_homeView);
+    }
+}
+
+void MainWindow::slotShowBoard()
+{
+    if (m_centerStack && m_tabWidget)
+    {
+        m_centerStack->setCurrentWidget(m_tabWidget);
     }
 }
 
