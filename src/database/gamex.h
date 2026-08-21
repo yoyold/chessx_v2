@@ -351,6 +351,11 @@ public :
     /** Evaluate a list of scores for the complete game (mainline only) */
     void scoreMaterial(QList<double> &scores) const;
     void scoreEvaluations(QList<double> &evaluations) const;
+    /** Seconds spent on each half move of the main line, 0 where unknown.
+        Reads %emt/%egt directly; for %clk (remaining clock) it differences the
+        side's own previous reading. The list is empty when the game carries no
+        usable time information at all. */
+    void scoreTimes(QList<double>& seconds) const;
 
     /** @return ECO code for the game */
     QString ecoClassify() const;

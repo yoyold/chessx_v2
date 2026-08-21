@@ -261,7 +261,7 @@ QMap<QString, QVariant> Settings::initDefaultValues() const
 
     map.insert("/GameList/AdditionalTags", "");
 
-    map.insert("/MainWindow/GameToolBar", false);
+    map.insert("/MainWindow/GameToolBar", true);
     map.insert("/MainWindow/ToolbarIconSize", DEFAULT_ICONSIZE);
     map.insert("/MainWindow/VerticalTabs", false);
     map.insert("/MainWindow/DarkTheme", false);

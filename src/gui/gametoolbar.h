@@ -22,6 +22,8 @@ public slots:
     void slotDisplayCurrentPly(int ply);
     void slotDisplayMaterial(const QList<double>& material);
     void slotDisplayEvaluations(const QList<double>& evaluations);
+    /** Seconds spent per half move; an empty list clears the series. */
+    void slotDisplayTimes(const QList<double>& seconds);
     void slotDisplayTime(const QString& timeWhite, const QString& timeBlack);
     void slotDisplayTime(Color color, const QString& time);
 

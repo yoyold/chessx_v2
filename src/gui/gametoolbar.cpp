@@ -47,6 +47,14 @@ void GameToolBar::slotDisplayEvaluations(const QList<double>& evaluations)
     m_chart->setValues(1, evaluations);
 }
 
+void GameToolBar::slotDisplayTimes(const QList<double>& seconds)
+{
+    /* Time is a duration, not a balance, so it grows from the floor rather than
+       from the zero-evaluation line. */
+    m_chart->setBaseline(2, ChartWidget::Bottom);
+    m_chart->setValues(2, seconds);
+}
+
 void GameToolBar::slotDisplayTime(const QString& timeWhite, const QString &timeBlack)
 {
     m_clock1->display(timeWhite);

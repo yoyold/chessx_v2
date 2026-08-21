@@ -17,7 +17,13 @@ public:
     explicit ChartWidget(QWidget *parent = nullptr);
     virtual ~ChartWidget();
 
+    /** Where a series' zero sits. Evaluations are signed and belong on the
+        centre line; seconds spent are never negative and belong on the floor. */
+    enum Baseline { Centre, Bottom };
+
     void setValues(int line, const QList<double> &values);
+    /** Sets how @p line is anchored. Must be called before setValues(). */
+    void setBaseline(int line, Baseline baseline);
     void setPly(int ply);
 
 signals:
@@ -44,6 +50,7 @@ protected:
 private:
     QVector<QPolygonF> m_polygon;
     QVector<QList<double>> m_values;
+    QVector<int> m_baselines;
     int m_ply;
     double m_plyIndicator;
     int m_lastSentIndicator;

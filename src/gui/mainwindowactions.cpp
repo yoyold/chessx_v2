@@ -402,6 +402,7 @@ void MainWindow::UpdateMaterialWidget()
     {
         m_gameToolBar->slotDisplayMaterial(databaseInfo()->material());
         m_gameToolBar->slotDisplayEvaluations(databaseInfo()->evaluations());
+        m_gameToolBar->slotDisplayTimes(databaseInfo()->times());
     }
 }
 

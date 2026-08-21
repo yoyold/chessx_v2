@@ -1798,6 +1798,84 @@ void GameX::evaluation(double& d) const
     }
 }
 
+namespace
+{
+/** @return "H:MM:SS(.d)" as seconds, or -1.0 when it cannot be parsed. */
+double parseClockSeconds(const QString& text)
+{
+    const QStringList parts = text.split(QChar(':'));
+    if (parts.count() != 3)
+    {
+        return -1.0;
+    }
+    bool ok1 = false, ok2 = false, ok3 = false;
+    const int h = parts.at(0).toInt(&ok1);
+    const int m = parts.at(1).toInt(&ok2);
+    const double s = parts.at(2).toDouble(&ok3);
+    if (!ok1 || !ok2 || !ok3)
+    {
+        return -1.0;
+    }
+    return h * 3600.0 + m * 60.0 + s;
+}
+} // namespace
+
+void GameX::scoreTimes(QList<double>& seconds) const
+{
+    GameX g = *this;
+    g.moveToStart();
+    seconds.clear();
+
+    const QRegularExpression filter = TimeAnnotation().filter();
+    /* Remaining clock per side, for the %clk case. */
+    double lastClock[2] = { -1.0, -1.0 };
+    bool anyTime = false;
+    int ply = 0;
+
+    seconds.append(0.0);   // the start position: no move has been played yet
+
+    while (g.forward())
+    {
+        QString tag;
+        const QString value = g.specAnnotation(filter, CURRENT_MOVE, &tag);
+        double spent = 0.0;
+
+        if (!value.isEmpty())
+        {
+            const double t = parseClockSeconds(value);
+            if (t >= 0.0)
+            {
+                if (tag == "clk")
+                {
+                    /* %clk is the clock left after the move, so the cost of the
+                       move is the drop since this side's previous reading. The
+                       first move of each side therefore has no measurable cost. */
+                    const int side = ply % 2;
+                    if (lastClock[side] >= 0.0)
+                    {
+                        spent = qMax(0.0, lastClock[side] - t);
+                        anyTime = true;
+                    }
+                    lastClock[side] = t;
+                }
+                else
+                {
+                    /* %emt / %egt already are the elapsed move time. */
+                    spent = t;
+                    anyTime = true;
+                }
+            }
+        }
+        seconds.append(spent);
+        ++ply;
+    }
+
+    if (!anyTime)
+    {
+        seconds.clear();   // nothing worth plotting
+    }
+}
+
 void GameX::scoreEvaluations(QList<double>& evaluations) const
 {
     GameX g = *this;

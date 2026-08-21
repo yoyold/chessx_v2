@@ -74,6 +74,11 @@ public:
     void setEndOfGame(bool value);
 
     bool getBookMove() const;
+
+    /** Sets the two colours used for engine scores in toString(), as "rrggbb".
+        The database layer must not depend on the GUI's design tokens, so the
+        GUI pushes them in once at start-up instead. */
+    static void setScoreColors(const QString& favourable, const QString& unfavourable);
     void setBookMove(bool bookMove);
 
     Move getTb() const;

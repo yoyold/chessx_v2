@@ -33,6 +33,15 @@ ChartWidget::~ChartWidget()
 {
 }
 
+void ChartWidget::setBaseline(int line, Baseline baseline)
+{
+    while (m_baselines.size() <= line)
+    {
+        m_baselines.append(Centre);
+    }
+    m_baselines[line] = baseline;
+}
+
 void ChartWidget::setValues(int line, const QList<double>& values)
 {
     if (line >= m_values.size())
@@ -234,19 +243,25 @@ void ChartWidget::updatePolygon(int line)
             if (absd > max) max = absd;
         }
 
-        double multiplierH = (max != 0.0) ? ((double)height()) / (max*2.0) : 0.0;
+        const bool onFloor = (line < m_baselines.size()) && (m_baselines.at(line) == Bottom);
+        /* A floor-anchored series uses the full height for its positive range;
+           a centred one splits the height either side of zero. */
+        double multiplierH = (max != 0.0)
+                ? ((double)height()) / (onFloor ? max : max * 2.0)
+                : 0.0;
         double multiplierW = ((double)width()) / (values.count()-1);
+        const double zero = onFloor ? height() : height() / 2.0;
 
-        polygon<<QPointF(0.0, height()/2.0);
+        polygon<<QPointF(0.0, zero);
         int i = 0;
         foreach(double d, values)
         {
-            polygon<<QPointF(multiplierW*i,-d*multiplierH+height()/2.0);
+            polygon<<QPointF(multiplierW*i, -d*multiplierH + zero);
             ++i;
         }
         if (i)
         {
-            polygon<<QPointF(multiplierW*i, height()/2.0);
+            polygon<<QPointF(multiplierW*i, zero);
         }
     }
     setUpdatesEnabled(true);

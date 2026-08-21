@@ -22,6 +22,7 @@
 	The Analysis widget which shows engine output
 */
 
+class QToolButton;
 class Tablebase;
 class Database;
 
@@ -128,6 +129,8 @@ private:
     bool isAnalysisEnabled() const;
     /** Update analysis. */
     void updateAnalysis();
+    /** Pushes the design tokens into Analysis so engine lines match the theme. */
+    static void applyScoreColors();
     /** @return the verdict strip: score, best line and engine telemetry. */
     QString verdictStrip() const;
     /** Publishes the leading line's score for the evaluation bar. */
@@ -167,6 +170,7 @@ private:
 
     bool m_gameMode;
     bool m_hideLines;
+    QToolButton* m_btCollapse;
  };
 
 #endif // ANALYSIS_WIDGET_H_INCLUDED

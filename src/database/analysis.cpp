@@ -186,6 +186,20 @@ void Analysis::setMovesToMate(int mate)
     m_mateIn = mate;
 }
 
+namespace
+{
+/* Defaults match the historic appearance; the GUI overrides them with the
+   design tokens so engine output matches the rest of the interface. */
+QString s_colorFavourable = QStringLiteral("00cc99");
+QString s_colorUnfavourable = QStringLiteral("ff3300");
+}
+
+void Analysis::setScoreColors(const QString& favourable, const QString& unfavourable)
+{
+    if (!favourable.isEmpty()) s_colorFavourable = favourable;
+    if (!unfavourable.isEmpty()) s_colorUnfavourable = unfavourable;
+}
+
 QString Analysis::toString(const BoardX& board, bool hideLines) const
 {
     BoardX testBoard = board;
@@ -193,8 +207,8 @@ QString Analysis::toString(const BoardX& board, bool hideLines) const
 
     bool whiteToMove = testBoard.toMove() == White;
 
-    QString cw = "00cc99";
-    QString cb = "ff3300";
+    QString cw = s_colorFavourable;
+    QString cb = s_colorUnfavourable;
 
     if (getEndOfGame())
     {

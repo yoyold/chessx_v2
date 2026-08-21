@@ -13,6 +13,8 @@
 #include "analysis.h"
 #include "analysiswidget.h"
 #include "designtokens.h"
+
+#include <QToolButton>
 #include "board.h"
 #include "databaseinfo.h"
 #include "enginelist.h"
@@ -44,6 +46,22 @@ AnalysisWidget::AnalysisWidget(QWidget *parent)
       m_hideLines(false)
 {
     ui.setupUi(this);
+    applyScoreColors();
+
+    /* Collapsing the engine lines was only reachable from a context menu on the
+       output pane, which is not somewhere anyone looks. */
+    m_btCollapse = new QToolButton(this);
+    m_btCollapse->setObjectName("btCollapseLines");
+    m_btCollapse->setText(tr("Lines"));
+    m_btCollapse->setCheckable(true);
+    m_btCollapse->setChecked(!m_hideLines);
+    m_btCollapse->setToolTip(tr("Show the full engine lines, not just the score and best move"));
+    connect(m_btCollapse, &QToolButton::toggled, this, [this](bool on)
+    {
+        setHideLines(!on);
+    });
+    ui.topControls->addWidget(m_btCollapse);
+
     connect(ui.engineList, SIGNAL(activated(int)), SLOT(slotSelectEngine()));
     connect(ui.bookList, SIGNAL(currentIndexChanged(int)), SLOT(bookActivated(int)));
     connect(ui.analyzeButton, SIGNAL(clicked(bool)), SLOT(toggleAnalysis()));
@@ -77,6 +95,14 @@ void AnalysisWidget::setHideLines(bool newHideLines)
 {
     m_hideLines = newHideLines;
     updateAnalysis();
+}
+
+void AnalysisWidget::applyScoreColors()
+{
+    /* Engine scores follow the semantic ramp rather than the old lime/vermilion,
+       so a line agrees with the evaluation bar and the move list. */
+    Analysis::setScoreColors(DesignTokens::color(DesignTokens::Good).name().mid(1),
+                             DesignTokens::color(DesignTokens::Blunder).name().mid(1));
 }
 
 void AnalysisWidget::showContextMenu(const QPoint &pt)
