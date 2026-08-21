@@ -444,6 +444,8 @@ add_library(gui STATIC
   gui/simplelabel.h
   gui/designtokens.cpp
   gui/designtokens.h
+  gui/evalbar.cpp
+  gui/evalbar.h
   gui/navrail.cpp
   gui/navrail.h
   gui/style.cpp

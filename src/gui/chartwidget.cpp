@@ -11,6 +11,7 @@
 #include <QPalette>
 #include <cmath>
 
+#include "designtokens.h"
 #include "qt6compat.h"
 
 #if defined(_MSC_VER) && defined(_DEBUG)
@@ -57,61 +58,92 @@ void ChartWidget::setPly(int ply)
 void ChartWidget::paintEvent(QPaintEvent*)
 {
     QPainter painter(this);
-    painter.setWindow(0,0,width(),height());
-    painter.eraseRect(0,0,width(),height());
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.setWindow(0, 0, width(), height());
 
-    QPen pen0(Qt::SolidLine);
-    pen0.setColor(palette().color(QPalette::Mid));
-    QColor midHalf = palette().color(QPalette::Mid);
-    midHalf.setAlpha(50);
+    const qreal midY = height() / 2.0;
 
-    QPen pen1(Qt::DashLine);
-    pen1.setColor(midHalf);
-    QPen pen2(Qt::DotLine);
-    pen2.setColor(midHalf);
+    painter.fillRect(rect(), DesignTokens::color(DesignTokens::Surface));
 
-    painter.setPen(pen0);
-    painter.drawRect(0,0,width(),height());
-    painter.setPen(pen1);
-
-    for (int i=0;i<m_polygon.count();++i)
+    /* Faint move gridlines every ten plies give the trace a sense of scale
+       without competing with it. */
+    if (!m_polygon.isEmpty())
     {
-        const QPolygonF& polygon = m_polygon.at(i);
-
-        if (i==0)
+        QPen grid(DesignTokens::color(DesignTokens::Line, 110));
+        painter.setPen(grid);
+        const QPolygonF& first = m_polygon.at(0);
+        for (int j = 10; j < first.count(); j += 10)
         {
-            for (int j=10;j<polygon.count();j+=10)
-            {
-                painter.drawLine(polygon[j].x(),0,polygon[j].x(),height());
-            }
+            painter.drawLine(QPointF(first[j].x(), 0), QPointF(first[j].x(), height()));
         }
-
-        QColor pcol = palette().color(i==0 ? QPalette::BrightText : QPalette::Midlight);
-        QColor col = pcol;
-        pcol.setAlpha(100.0*1.0/(i+1));
-        col.setAlpha(50.0*1.0/(i+1));
-
-        QPen pen3(Qt::SolidLine);
-        pen3.setColor(pcol);
-        painter.setPen(pen3);
-
-        QBrush brush(Qt::SolidPattern);
-        brush.setColor(col);
-        painter.setBrush(brush);
-
-        painter.setRenderHints(QPainter::Antialiasing);
-        painter.drawPolygon(polygon);
     }
 
-    QPen pen4(Qt::SolidLine);
-    QColor colPly = palette().color(QPalette::BrightText);
-    pen4.setColor(colPly);
-    pen4.setWidth(2);
-    painter.setPen(pen4);
-    painter.drawLine(m_plyIndicator,3*height()/4,m_plyIndicator,height()/4);
+    for (int i = 0; i < m_polygon.count(); ++i)
+    {
+        const QPolygonF& polygon = m_polygon.at(i);
+        if (polygon.count() < 2)
+        {
+            continue;
+        }
 
-    painter.setPen(pen2);
-    painter.drawLine(0,height()/2,width(),height()/2);
+        /* The first series is the game itself; any further series are secondary
+           and step back in weight. */
+        const bool primary = (i == 0);
+        QColor line = primary ? DesignTokens::color(DesignTokens::Accent)
+                              : DesignTokens::color(DesignTokens::Muted);
+        QColor fill = line;
+        fill.setAlpha(primary ? 46 : 22);
+        line.setAlpha(primary ? 235 : 120);
+
+        painter.setPen(Qt::NoPen);
+        painter.setBrush(fill);
+        painter.drawPolygon(polygon);
+
+        /* Redraw the trace itself on top: drawPolygon closes the shape along the
+           baseline, which would otherwise put a stroke across the zero rule. */
+        QPolygonF trace = polygon;
+        if (trace.count() > 2)
+        {
+            trace.remove(trace.count() - 1);
+            trace.remove(0);
+        }
+        QPen tracePen(line);
+        tracePen.setWidthF(primary ? 1.8 : 1.2);
+        tracePen.setJoinStyle(Qt::RoundJoin);
+        painter.setPen(tracePen);
+        painter.setBrush(Qt::NoBrush);
+        painter.drawPolyline(trace);
+    }
+
+    /* The zero rule is the reference every reading is taken against, so it sits
+       above the fill but below the cursor. */
+    QPen zero(DesignTokens::color(DesignTokens::LineStrong));
+    zero.setStyle(Qt::DashLine);
+    painter.setPen(zero);
+    painter.drawLine(QPointF(0, midY), QPointF(width(), midY));
+
+    /* Ply cursor: a full-height rule plus a dot on the trace, so the current
+       move is locatable at a glance and its value is readable. */
+    QPen cursor(DesignTokens::color(DesignTokens::Accent, 160));
+    cursor.setWidth(1);
+    painter.setPen(cursor);
+    painter.drawLine(QPointF(m_plyIndicator, 0), QPointF(m_plyIndicator, height()));
+
+    if (!m_polygon.isEmpty())
+    {
+        const QPolygonF& first = m_polygon.at(0);
+        const int index = qBound(1, static_cast<int>(m_ply) + 1, first.count() - 2);
+        if (first.count() > 2)
+        {
+            painter.setPen(Qt::NoPen);
+            painter.setBrush(DesignTokens::color(DesignTokens::Accent));
+            painter.drawEllipse(first[index], 3.0, 3.0);
+        }
+    }
+
+    painter.setPen(QPen(DesignTokens::color(DesignTokens::Line)));
+    painter.setBrush(Qt::NoBrush);
+    painter.drawRect(0, 0, width() - 1, height() - 1);
 }
 
 void ChartWidget::resizeEvent(QResizeEvent*)
@@ -187,7 +219,7 @@ void ChartWidget::updatePolygon(int line)
 {
     if (line >= m_polygon.size())
     {
-        m_polygon.insert(line, *new QPolygonF());
+        m_polygon.insert(line, QPolygonF());
     }
     setUpdatesEnabled(false);
     QList<double>& values = m_values[line];

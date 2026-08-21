@@ -304,6 +304,7 @@ QMap<QString, QVariant> Settings::initDefaultValues() const
     map.insert("/Board/showThreat", true);
     map.insert("/Board/showVariationArrows", true);
     map.insert("/Board/showTargets", false);
+    map.insert("/Board/showEvalBar", true);
     map.insert("/Board/modernStyle", true);
     map.insert("/Board/showLegalMoves", true);
     map.insert("/Board/animateMoves", true);

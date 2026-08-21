@@ -5,7 +5,11 @@
 #include "boardviewex.h"
 #include "ui_boardviewex.h"
 
+#include "boardview.h"
+#include "evalbar.h"
 #include "settings.h"
+
+#include <QHBoxLayout>
 
 #if defined(_MSC_VER) && defined(_DEBUG)
 #define DEBUG_NEW new( _NORMAL_BLOCK, __FILE__, __LINE__ )
@@ -14,10 +18,23 @@
 
 BoardViewEx::BoardViewEx(QWidget *parent) :
     QWidget(parent),
+    m_evalBar(nullptr),
     ui(new Ui::BoardViewEx)
 {
     ui->setupUi(this);
     ui->boardView->setFlags(ui->boardView->flags() | BoardView::AllowCustomBackground);
+
+    /* The evaluation bar belongs against the board, not in a panel: it is read in
+       the same glance as the position. Re-parenting the board into a row layout
+       keeps the .ui file untouched. */
+    m_evalBar = new EvalBar(this);
+    QHBoxLayout* boardRow = new QHBoxLayout;
+    boardRow->setContentsMargins(0, 0, 0, 0);
+    boardRow->setSpacing(6);
+    boardRow->addWidget(m_evalBar);
+    boardRow->addWidget(ui->boardView, 1);
+    ui->verticalLayout->addLayout(boardRow);
+    m_evalBar->setVisible(AppSettings->getValue("/Board/showEvalBar").toBool());
 
     connect(boardView(), SIGNAL(signalFlipped(bool,bool)), SLOT(boardIsFlipped(bool,bool)));
     setMouseTracking(true);
@@ -29,6 +46,11 @@ BoardViewEx::~BoardViewEx()
     ui->timeTop->StopCountDown();
     ui->timeBottom->StopCountDown();
     delete ui;
+}
+
+EvalBar* BoardViewEx::evalBar()
+{
+    return m_evalBar;
 }
 
 void BoardViewEx::resizeEvent(QResizeEvent* e)
@@ -138,6 +160,7 @@ void BoardViewEx::stopTimes()
 
 void BoardViewEx::boardIsFlipped(bool oldState, bool newState)
 {
+    if (m_evalBar) m_evalBar->setFlipped(newState);
     if (oldState != newState)
     {
         QString topTime = ui->timeTop->time();

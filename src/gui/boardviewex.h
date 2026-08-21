@@ -13,6 +13,7 @@ class BoardViewEx;
 }
 
 class BoardView;
+class EvalBar;
 
 class BoardViewEx : public QWidget
 {
@@ -22,6 +23,8 @@ public:
     ~BoardViewEx();
 
     BoardView* boardView();
+    /** @return the evaluation bar beside the board. */
+    EvalBar* evalBar();
     QObject *dbIndex();
 
 public slots:
@@ -43,6 +46,7 @@ private:
     void paintEvent(QPaintEvent *pe);
     void resizeEvent(QResizeEvent* e);
     QPixmap scaledBackground;
+    EvalBar* m_evalBar;
     Ui::BoardViewEx *ui;
 };
 

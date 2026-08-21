@@ -138,6 +138,10 @@ protected:
   public slots:
     /** Routes a navigation rail destination to the matching panel or action. */
     void slotNavigate(int destination);
+    /** Feeds the current board's evaluation bar from the primary engine. */
+    void slotEvaluationChanged(int centipawns);
+    void slotEvaluationMate(int moves);
+    void slotEvaluationCleared();
     /** Switches between the modern shell and the classic dock layout. */
     void slotToggleModernLayout();
     /** Changes window title in response to boardview flipping**/

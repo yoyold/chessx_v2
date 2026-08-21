@@ -79,6 +79,7 @@
 #include <QTimer>
 #include <QToolBar>
 
+#include "evalbar.h"
 #include "navrail.h"
 #include "qt6compat.h"
 
@@ -704,6 +705,42 @@ void MainWindow::setupAnalysisWidget(DockWidgetEx* analysisDock, AnalysisWidget*
     connect(this, SIGNAL(signalUpdateDatabaseList(QStringList)), analysis, SLOT(slotUpdateBooks(QStringList)));
     connect(analysis, SIGNAL(signalSourceChanged(QString)), this, SLOT(slotUpdateOpeningBook(QString)));
     connect(this, SIGNAL(signalGameModeChanged(bool)), analysis, SLOT(setGameMode(bool)));
+
+    /* Only the primary engine drives the evaluation bar - two engines writing to
+       one bar would make it flicker between disagreeing scores. */
+    if (analysis == m_mainAnalysis)
+    {
+        connect(analysis, SIGNAL(evaluationChanged(int)), SLOT(slotEvaluationChanged(int)));
+        connect(analysis, SIGNAL(evaluationMate(int)), SLOT(slotEvaluationMate(int)));
+        connect(analysis, SIGNAL(evaluationCleared()), SLOT(slotEvaluationCleared()));
+    }
+}
+
+void MainWindow::slotEvaluationChanged(int centipawns)
+{
+    BoardViewEx* frame = BoardViewFrame(m_boardView);
+    if (frame && frame->evalBar())
+    {
+        frame->evalBar()->setScore(centipawns);
+    }
+}
+
+void MainWindow::slotEvaluationMate(int moves)
+{
+    BoardViewEx* frame = BoardViewFrame(m_boardView);
+    if (frame && frame->evalBar())
+    {
+        frame->evalBar()->setMate(moves);
+    }
+}
+
+void MainWindow::slotEvaluationCleared()
+{
+    BoardViewEx* frame = BoardViewFrame(m_boardView);
+    if (frame && frame->evalBar())
+    {
+        frame->evalBar()->clear();
+    }
 }
 
 MainWindow::~MainWindow()

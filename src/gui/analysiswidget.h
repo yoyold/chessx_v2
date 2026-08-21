@@ -111,6 +111,12 @@ signals:
     void receivedBestMove(const Analysis& analysis);
     void currentBestMove(const Analysis& analysis);
     void signalSourceChanged(QString);
+    /** Current evaluation in centipawns from White's point of view. */
+    void evaluationChanged(int centipawns);
+    /** Current evaluation as a forced mate; negative means Black mates. */
+    void evaluationMate(int moves);
+    /** No evaluation is available (engine stopped, no analysis). */
+    void evaluationCleared();
 
 protected slots:
     void bookActivated(int);
@@ -122,6 +128,10 @@ private:
     bool isAnalysisEnabled() const;
     /** Update analysis. */
     void updateAnalysis();
+    /** @return the verdict strip: score, best line and engine telemetry. */
+    QString verdictStrip() const;
+    /** Publishes the leading line's score for the evaluation bar. */
+    void publishEvaluation() const;
     /** Update complexity. */
     void updateComplexity();
     void updateBookMoves();

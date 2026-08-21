@@ -12,6 +12,7 @@
 #include "settings.h"
 #include "analysis.h"
 #include "analysiswidget.h"
+#include "designtokens.h"
 #include "board.h"
 #include "databaseinfo.h"
 #include "enginelist.h"
@@ -694,9 +695,107 @@ void AnalysisWidget::clear()
     ui.variationText->clear();
 }
 
+QString AnalysisWidget::verdictStrip() const
+{
+    if (m_analyses.isEmpty() || !m_analyses[0].isValid())
+    {
+        return QString();
+    }
+    const Analysis& a = m_analyses[0];
+
+    const QString accent = DesignTokens::color(DesignTokens::Accent).name();
+    const QString muted = DesignTokens::color(DesignTokens::Muted).name();
+    const QString ink2 = DesignTokens::color(DesignTokens::Ink2).name();
+
+    /* The score is the one thing a reader looks for first, so it is the only
+       thing set large and in the accent colour. */
+    QString score;
+    if (a.isAlreadyMate() || a.getEndOfGame())
+    {
+        score = tr("Mate");
+    }
+    else if (a.isMate())
+    {
+        score = QString("M%1").arg(qAbs(a.movesToMate()));
+    }
+    else
+    {
+        const double pawns = a.score() / 100.0;
+        score = QString("%1%2").arg(pawns > 0 ? "+" : "").arg(pawns, 0, 'f', 2);
+    }
+
+    /* Telemetry is deliberately quiet: it should read as instrumentation, not
+       compete with the evaluation. */
+    QStringList telemetry;
+    if (a.depth() > 0)
+    {
+        telemetry << tr("depth %1").arg(a.depth());
+    }
+    const quint64 nodes = a.nodes();
+    if (nodes > 0)
+    {
+        telemetry << (nodes >= 1000000
+                      ? QString("%1 MN").arg(nodes / 1000000.0, 0, 'f', 1)
+                      : QString("%1 kN").arg(nodes / 1000.0, 0, 'f', 0));
+    }
+    if (nodes > 0 && a.time() > 0)
+    {
+        const double nps = nodes * 1000.0 / a.time();
+        telemetry << (nps >= 1000000.0
+                      ? tr("%1 Mn/s").arg(nps / 1000000.0, 0, 'f', 1)
+                      : tr("%1 kn/s").arg(nps / 1000.0, 0, 'f', 0));
+    }
+
+    /* Best move, in the reader's own notation. */
+    QString best;
+    if (!a.variation().isEmpty())
+    {
+        BoardX b = m_board;
+        best = b.moveToSan(a.variation().first(), true);
+    }
+
+    QString html = "<table width=\"100%\" cellspacing=\"0\" cellpadding=\"0\"><tr>";
+    html += QString("<td><span style=\"font-size:16pt; font-weight:bold; color:%1;\">%2</span>")
+            .arg(accent, score.toHtmlEscaped());
+    if (!best.isEmpty())
+    {
+        html += QString("&nbsp;<span style=\"font-size:11pt; color:%1;\">%2</span>")
+                .arg(ink2, best.toHtmlEscaped());
+    }
+    html += "</td>";
+    html += QString("<td align=\"right\" valign=\"middle\"><span style=\"color:%1;\">%2</span></td>")
+            .arg(muted, telemetry.join(" &middot; ").toHtmlEscaped());
+    html += "</tr></table>";
+    return html;
+}
+
+void AnalysisWidget::publishEvaluation() const
+{
+    AnalysisWidget* self = const_cast<AnalysisWidget*>(this);
+    if (m_analyses.isEmpty() || !m_analyses[0].isValid())
+    {
+        emit self->evaluationCleared();
+        return;
+    }
+    const Analysis& a = m_analyses[0];
+    if (a.isMate())
+    {
+        emit self->evaluationMate(a.movesToMate());
+    }
+    else if (!a.isAlreadyMate() && !a.getEndOfGame())
+    {
+        emit self->evaluationChanged(a.score());
+    }
+}
+
 void AnalysisWidget::updateAnalysis()
 {
     QString text;
+    const QString strip = verdictStrip();
+    if (!strip.isEmpty())
+    {
+        text = strip + "<hr>";
+    }
     if (ui.btPin->isChecked())
     {
         unsigned int moveNr = m_board.moveNumber();
@@ -731,6 +830,7 @@ void AnalysisWidget::updateAnalysis()
         text.append(bookLine);
     }
     ui.variationText->setText(text);
+    publishEvaluation();
 }
 
 void AnalysisWidget::updateComplexity()
