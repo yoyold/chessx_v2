@@ -38,6 +38,7 @@ class Database;
 class DatabaseInfo;
 class DatabaseList;
 class DatabaseRegistry;
+class CommandPalette;
 class DockWidgetEx;
 class NavRail;
 class DownloadManager;
@@ -138,6 +139,8 @@ protected:
   public slots:
     /** Routes a navigation rail destination to the matching panel or action. */
     void slotNavigate(int destination);
+    /** Opens the searchable command palette. */
+    void slotCommandPalette();
     /** Feeds the current board's evaluation bar from the primary engine. */
     void slotEvaluationChanged(int centipawns);
     void slotEvaluationMate(int moves);
@@ -718,6 +721,7 @@ private:
     QPointer<BoardView> m_boardView;
     QPointer<QSplitter> m_boardSplitter;
     QPointer<NavRail> m_navRail;
+    QPointer<CommandPalette> m_commandPalette;
     GameNotationWidget* m_gameView;
     OpeningTreeWidget* m_openingTreeWidget;
     QPointer<QProgressBar> m_progressBar;

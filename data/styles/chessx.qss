@@ -168,6 +168,45 @@ QToolButton:disabled {
 }
 
 /* --------------------------------------------------------------------------
+   Command palette
+
+   An overlay, so it sits on the raised surface with a strong border to separate
+   it from the window behind.
+   -------------------------------------------------------------------------- */
+
+QDialog#CommandPalette {
+    background: @overlay;
+    border: 1px solid @line-strong;
+    border-radius: @radius-lg;
+}
+
+QLineEdit#CommandPaletteSearch {
+    background: @surface;
+    border: 1px solid @line;
+    border-radius: @radius-md;
+    padding: @space2 @space3;
+    font-size: 12pt;
+}
+
+QLineEdit#CommandPaletteSearch:focus {
+    border-color: @accent;
+}
+
+QTreeWidget#CommandPaletteList {
+    background: transparent;
+    border: none;
+}
+
+QTreeWidget#CommandPaletteList::item {
+    padding: 6px @space2;
+    border-radius: @radius-sm;
+}
+
+QTreeWidget#CommandPaletteList::item:selected {
+    background: @accent-wash;
+}
+
+/* --------------------------------------------------------------------------
    Navigation rail
 
    The rail is the primary navigation surface, so it sits on the ground colour

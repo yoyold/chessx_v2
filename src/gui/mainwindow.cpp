@@ -79,6 +79,7 @@
 #include <QTimer>
 #include <QToolBar>
 
+#include "commandpalette.h"
 #include "evalbar.h"
 #include "navrail.h"
 #include "qt6compat.h"
@@ -714,6 +715,15 @@ void MainWindow::setupAnalysisWidget(DockWidgetEx* analysisDock, AnalysisWidget*
         connect(analysis, SIGNAL(evaluationMate(int)), SLOT(slotEvaluationMate(int)));
         connect(analysis, SIGNAL(evaluationCleared()), SLOT(slotEvaluationCleared()));
     }
+}
+
+void MainWindow::slotCommandPalette()
+{
+    if (!m_commandPalette)
+    {
+        m_commandPalette = new CommandPalette(menuBar(), this);
+    }
+    m_commandPalette->showPalette();
 }
 
 void MainWindow::slotEvaluationChanged(int centipawns)
@@ -2022,6 +2032,12 @@ void MainWindow::setupActions()
 
     /* View menu */
     m_menuView = menuBar()->addMenu(tr("&View"));
+
+    /* One searchable entry point to every command in the application. It also
+       lists each command's shortcut, so it doubles as the shortcut reference. */
+    m_menuView->addAction(createAction(tr("Command palette..."), SLOT(slotCommandPalette()),
+                                       Qt::CTRL | Qt::Key_K));
+    m_menuView->addSeparator();
 
     QMenu* toolbars = m_menuView->addMenu(tr("Toolbars"));
 
