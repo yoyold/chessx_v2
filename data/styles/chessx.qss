@@ -168,6 +168,52 @@ QToolButton:disabled {
 }
 
 /* --------------------------------------------------------------------------
+   Navigation rail
+
+   The rail is the primary navigation surface, so it sits on the ground colour
+   with a single hairline separating it from the content.
+   -------------------------------------------------------------------------- */
+
+QToolBar#NavRailBar {
+    background: @ground;
+    border: none;
+    border-right: 1px solid @line;
+    padding: 0px;
+    spacing: 0px;
+}
+
+QFrame#NavRail {
+    background: @ground;
+    border: none;
+}
+
+QFrame#NavRail QToolButton {
+    background: transparent;
+    border: 1px solid transparent;
+    border-left: 2px solid transparent;
+    border-radius: @radius-md;
+    color: @ink-2;
+    padding: @space2 6px;
+    text-align: left;
+}
+
+QFrame#NavRail QToolButton:hover {
+    background: @raised;
+    color: @ink;
+}
+
+QFrame#NavRail QToolButton:checked {
+    background: @accent-wash;
+    border-left-color: @accent;
+    color: @accent;
+    font-weight: 600;
+}
+
+QFrame#NavRail QToolButton#NavRail_Toggle {
+    color: @muted;
+}
+
+/* --------------------------------------------------------------------------
    Buttons
 
    Hierarchy is expressed with a dynamic property, not a stylesheet fork:

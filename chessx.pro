@@ -327,6 +327,7 @@ HEADERS += src/database/board.h \
   src/gui/shellhelper.h \
   src/gui/simplelabel.h \
   src/gui/designtokens.h \
+  src/gui/navrail.h \
   src/gui/style.h \
   src/gui/tableview.h \
   src/gui/testadapter.h \
@@ -500,6 +501,7 @@ SOURCES += \
   src/gui/shellhelper.cpp \
   src/gui/simplelabel.cpp \
   src/gui/designtokens.cpp \
+  src/gui/navrail.cpp \
   src/gui/style.cpp \
   src/gui/tableview.cpp \
   src/gui/testadapter.cpp \

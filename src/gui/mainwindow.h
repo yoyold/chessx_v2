@@ -39,6 +39,7 @@ class DatabaseInfo;
 class DatabaseList;
 class DatabaseRegistry;
 class DockWidgetEx;
+class NavRail;
 class DownloadManager;
 class ECOListWidget;
 class EcoThread;
@@ -135,6 +136,10 @@ protected:
     /* Sets size for icons in the toolbar */
     QToolBar * fileToolBar, * editToolBar, * viewToolBar, * gameToolBar, * dbToolBar, * searchToolBar;
   public slots:
+    /** Routes a navigation rail destination to the matching panel or action. */
+    void slotNavigate(int destination);
+    /** Switches between the modern shell and the classic dock layout. */
+    void slotToggleModernLayout();
     /** Changes window title in response to boardview flipping**/
     void updateWindowTitleFlipped(bool, bool);
     /** resizes icons in the toolbar **/
@@ -615,6 +620,13 @@ private slots:
     void slotUpdateOpeningTreeWidget();
     void slotDatabaseEditTag();
 private:
+    /** Builds the navigation rail and wraps the central widget in it. */
+    void setupNavRail();
+    /** Shows and raises the dock with the given object name, if it exists. */
+    void raiseDockByName(const QString& objectName);
+    /** @return true when the modern shell layout is active. */
+    static bool useModernLayout();
+
     /** Create single menu action. */
     QAction* createAction(QString name, const char* slot, const QKeySequence& key = QKeySequence(),
                           QToolBar* pToolBar = nullptr, QString image = QString(), const QString& tip = QString(), QAction::MenuRole menuRole = QAction::NoRole, QObject *parent=nullptr);
@@ -701,6 +713,7 @@ private:
     /* Main gui parts */
     QPointer<BoardView> m_boardView;
     QPointer<QSplitter> m_boardSplitter;
+    QPointer<NavRail> m_navRail;
     GameNotationWidget* m_gameView;
     OpeningTreeWidget* m_openingTreeWidget;
     QPointer<QProgressBar> m_progressBar;

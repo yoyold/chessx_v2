@@ -78,6 +78,8 @@
 #include <QTabBar>
 #include <QTimer>
 #include <QToolBar>
+
+#include "navrail.h"
 #include "qt6compat.h"
 
 template< typename T, std::size_t N >
@@ -375,16 +377,48 @@ MainWindow::MainWindow() : QMainWindow(),
     connect(this, SIGNAL(signalGameModeChanged(bool)), m_openingTreeWidget, SLOT(setDisabled(bool)));
     connect(this, SIGNAL(signalUpdateDatabaseList(QStringList)), m_openingTreeWidget, SLOT(updateFilterIndex(QStringList)));
 
-    // Arrange Upper Rightside docks
-    tabifyDockWidget(ficsConsoleDock, eventListDock);
-    tabifyDockWidget(ficsConsoleDock, ecoListDock);
-    tabifyDockWidget(ficsConsoleDock, playerListDock);
-    tabifyDockWidget(ficsConsoleDock, openingDock);
-    tabifyDockWidget(ficsConsoleDock, dbListDock);
+    if (useModernLayout())
+    {
+        /* Four context panels instead of twelve peer docks:
+             Moves    notation + annotations
+             Explore  opening tree, ECO, players, events
+             Info     game list, databases, FICS
+           Engine (the two analysis docks) is arranged in setupAnalysisWidget's
+           caller below, on the left, so evaluation stays visible beside the
+           board rather than competing with the notation. */
+        addDockWidget(Qt::RightDockWidgetArea, gameTextDock);
+        tabifyDockWidget(gameTextDock, annotationTextDock);
 
-    // Arrange Lower Rightside docks
-    tabifyDockWidget(gameTextDock, gameListDock);
-    tabifyDockWidget(gameTextDock, annotationTextDock);
+        addDockWidget(Qt::RightDockWidgetArea, openingDock);
+        tabifyDockWidget(openingDock, ecoListDock);
+        tabifyDockWidget(openingDock, playerListDock);
+        tabifyDockWidget(openingDock, eventListDock);
+
+        addDockWidget(Qt::RightDockWidgetArea, gameListDock);
+        tabifyDockWidget(gameListDock, dbListDock);
+        tabifyDockWidget(gameListDock, ficsConsoleDock);
+
+        /* Each group opens on its primary panel: notation for Moves, the opening
+           tree for Explore, the game list for Info. */
+        openingDock->show();
+        playerListDock->hide();
+        gameTextDock->raise();
+        openingDock->raise();
+        gameListDock->raise();
+    }
+    else
+    {
+        // Arrange Upper Rightside docks
+        tabifyDockWidget(ficsConsoleDock, eventListDock);
+        tabifyDockWidget(ficsConsoleDock, ecoListDock);
+        tabifyDockWidget(ficsConsoleDock, playerListDock);
+        tabifyDockWidget(ficsConsoleDock, openingDock);
+        tabifyDockWidget(ficsConsoleDock, dbListDock);
+
+        // Arrange Lower Rightside docks
+        tabifyDockWidget(gameTextDock, gameListDock);
+        tabifyDockWidget(gameTextDock, annotationTextDock);
+    }
 
     /* Analysis Dock */
     DockWidgetEx* analysisDock = new DockWidgetEx(tr("Analysis 1"), this);
@@ -409,6 +443,8 @@ MainWindow::MainWindow() : QMainWindow(),
 
     /* Append the FICS console to the view menu */
     m_menuView->addAction(ficsConsoleDock->toggleViewAction());
+
+    setupNavRail();
 
     /* Restoring layouts */
     if(!AppSettings->layout(this))
@@ -553,6 +589,99 @@ MainWindow::MainWindow() : QMainWindow(),
     {
         showNormal();
     }
+}
+
+bool MainWindow::useModernLayout()
+{
+    return AppSettings->getValue("/MainWindow/ModernLayout").toBool();
+}
+
+void MainWindow::setupNavRail()
+{
+    if (!useModernLayout())
+    {
+        return;
+    }
+
+    m_navRail = new NavRail(this);
+    connect(m_navRail, SIGNAL(destinationActivated(int)), SLOT(slotNavigate(int)));
+
+    m_navRail->setExpanded(AppSettings->getValue("/MainWindow/NavRailExpanded").toBool());
+    connect(m_navRail, &NavRail::expandedChanged, this, [](bool expanded)
+    {
+        AppSettings->setValue("/MainWindow/NavRailExpanded", expanded);
+    });
+
+    /* Hosting the rail in a fixed tool bar in the left tool bar area puts it
+       outside every dock area, hard against the window edge, and stops it being
+       dragged away or closed by accident. */
+    QToolBar* railBar = new QToolBar(tr("Navigation"), this);
+    railBar->setObjectName("NavRailBar");
+    railBar->setMovable(false);
+    railBar->setFloatable(false);
+    railBar->setAllowedAreas(Qt::LeftToolBarArea);
+    railBar->setContentsMargins(0, 0, 0, 0);
+    railBar->addWidget(m_navRail);
+    addToolBar(Qt::LeftToolBarArea, railBar);
+
+    /* Six stacked toolbars are what the rail replaces. They stay available under
+       View > Toolbars for anyone who wants them back. */
+    const QList<QToolBar*> bars = { fileToolBar, editToolBar, viewToolBar, dbToolBar, searchToolBar };
+    foreach (QToolBar* bar, bars)
+    {
+        if (bar) bar->setVisible(false);
+    }
+}
+
+void MainWindow::slotNavigate(int destination)
+{
+    switch (destination)
+    {
+    case NavRail::Home:
+        /* The dashboard is not built yet; the board is the closest thing to a
+           home surface, so raise it rather than doing nothing. */
+        if (m_tabWidget) m_tabWidget->setFocus();
+        break;
+
+    case NavRail::Play:
+        slotGameNew();
+        break;
+
+    case NavRail::Games:
+        raiseDockByName("GameList");
+        break;
+
+    case NavRail::Analysis:
+        raiseDockByName("AnalysisDock1");
+        break;
+
+    case NavRail::Openings:
+        raiseDockByName("OpeningTreeDock");
+        slotSearchTree();
+        break;
+
+    case NavRail::Databases:
+        raiseDockByName("Databases");
+        break;
+
+    case NavRail::Settings:
+        slotConfigure();
+        break;
+
+    default:
+        break;
+    }
+}
+
+void MainWindow::raiseDockByName(const QString& objectName)
+{
+    DockWidgetEx* dock = findChild<DockWidgetEx*>(objectName);
+    if (!dock)
+    {
+        return;
+    }
+    dock->show();
+    dock->raise();
 }
 
 void MainWindow::setupAnalysisWidget(DockWidgetEx* analysisDock, AnalysisWidget* analysis)
@@ -1858,6 +1987,13 @@ void MainWindow::setupActions()
     m_menuView = menuBar()->addMenu(tr("&View"));
 
     QMenu* toolbars = m_menuView->addMenu(tr("Toolbars"));
+
+    QAction* modernLayout = createAction(tr("Modern layout"), SLOT(slotToggleModernLayout()));
+    modernLayout->setCheckable(true);
+    modernLayout->setChecked(useModernLayout());
+    modernLayout->setStatusTip(tr("Navigation rail and grouped panels. Takes effect after a restart."));
+    m_menuView->addAction(modernLayout);
+
     m_menuView->addSeparator();
 
 #if defined(Q_OS_WINXX)
@@ -2166,6 +2302,10 @@ void MainWindow::setupActions()
     HelpBrowserShell* pHelpBrowser = new HelpBrowserShell(this);
     pHelpDock->setWidget(pHelpBrowser);
     addDockWidget(Qt::LeftDockWidgetArea, pHelpDock);
+    if (useModernLayout())
+    {
+        pHelpDock->hide();
+    }
     QAction* helpAction = pHelpDock->toggleViewAction();
     helpAction->setIcon(QIcon(":/images/help.png"));
     helpAction->setShortcut(Qt::Key_F1);

@@ -128,7 +128,7 @@ bool ChessXSettings::layout(QWidget* w)
                 QByteArray docks = value("Docks", QByteArray()).toByteArray();
                 if(docks.size())
                 {
-                    m->restoreState(docks, 0);
+                    m->restoreState(docks, ChessXSettings::LayoutVersion);
                 }
 
                 QStringList floatingDocks = value("FloatingDocks").toStringList();
@@ -251,7 +251,7 @@ void ChessXSettings::setLayout(const QWidget* w)
     const QMainWindow* m = qobject_cast<const QMainWindow*>(w);
     if (m)
     {
-        QByteArray docks = m->saveState(0);
+        QByteArray docks = m->saveState(ChessXSettings::LayoutVersion);
         setValue("Docks", docks);
 
         QStringList floatingDocks;

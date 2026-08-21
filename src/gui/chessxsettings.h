@@ -14,6 +14,11 @@ class Widget;
 class ChessXSettings : public Settings
 {
 public:
+    /** Version stamped into QMainWindow::saveState(). Bump it whenever the default
+        dock arrangement changes so a stale saved layout is rejected once rather
+        than silently overriding the new default. */
+    enum { LayoutVersion = 1 };
+
     ChessXSettings();
     ChessXSettings(const QString &fileName);
 

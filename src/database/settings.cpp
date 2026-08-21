@@ -266,6 +266,8 @@ QMap<QString, QVariant> Settings::initDefaultValues() const
     map.insert("/MainWindow/VerticalTabs", false);
     map.insert("/MainWindow/DarkTheme", false);
     map.insert("/MainWindow/Theme", "ChessX");
+    map.insert("/MainWindow/ModernLayout", true);
+    map.insert("/MainWindow/NavRailExpanded", false);
     map.insert("/MainWindow/StayOnTop", false);
     map.insert("/MainWindow/FilterFollowsGame", false);
     map.insert("/MainWindow/ShowMenuIcons", true);

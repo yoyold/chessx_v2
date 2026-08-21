@@ -426,6 +426,16 @@ void MainWindow::slotToggleStayOnTop()
 #endif
 }
 
+void MainWindow::slotToggleModernLayout()
+{
+    const bool modern = !AppSettings->getValue("/MainWindow/ModernLayout").toBool();
+    AppSettings->setValue("/MainWindow/ModernLayout", modern);
+    MessageDialog::information(modern
+        ? tr("The modern layout will be used the next time ChessX starts.")
+        : tr("The classic layout will be used the next time ChessX starts."),
+        tr("Layout"));
+}
+
 void MainWindow::slotConfigureFlip()
 {
     m_boardView->flip();
