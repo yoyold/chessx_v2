@@ -78,6 +78,11 @@ OpeningTreeWidget::OpeningTreeWidget(QWidget *parent) :
     ui->OpeningBoardWidget->addWidget(m_openingBoardView, 1);
     m_openingBoardView->configure();
     m_openingBoardView->setEnabled(false);
+    /* This board only ever mirrors the position the tree is being computed for,
+       which is the position already on the main board a few centimetres to the
+       left. It costs a third of a narrow panel to say nothing new, so it is off
+       unless asked for. */
+    m_openingBoardView->setVisible(AppSettings->getValue("/OpeningTree/ShowBoard").toBool());
 }
 
 OpeningTreeWidget::~OpeningTreeWidget()

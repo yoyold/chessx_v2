@@ -532,21 +532,28 @@ void BoardView::drawMoveQuality(QPaintEvent* event)
     }
 
     const int side = m_theme.size().width();
-    const int d = qMax(14, side / 3);
-    /* Top-right of the square, overlapping the edge, so it never hides the
-       piece it is describing. */
-    const QRect badge(square.right() - d * 2 / 3, square.top() - d / 3, d, d);
+    /* Half a square: small enough to leave the piece readable, large enough to
+       be seen without looking for it. */
+    const int d = qMax(20, side / 2);
+    /* Overlapping the top-right corner, clear of the piece beneath. */
+    const QRect badge(square.right() - d * 3 / 5, square.top() - d * 2 / 5, d, d);
 
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
 
-    p.setPen(QPen(DesignTokens::color(DesignTokens::Ground), qMax(1.0, d / 12.0)));
+    /* A ring in the board's own dark tone separates the badge from whichever
+       square colour it lands on. */
+    QPen ring(DesignTokens::color(DesignTokens::Ground));
+    ring.setWidthF(qMax(1.5, d / 11.0));
+    p.setPen(ring);
     p.setBrush(DesignTokens::color(role));
     p.drawEllipse(badge);
 
     QFont f = font();
     f.setBold(true);
-    f.setPixelSize(qMax(7, d / 2));
+    /* "??" needs more room than "!", so the two-character glyphs are set a
+       little smaller to keep both inside the disc. */
+    f.setPixelSize(qMax(9, (glyph.length() > 1 ? d * 4 / 10 : d * 11 / 20)));
     p.setFont(f);
     p.setPen(DesignTokens::color(DesignTokens::Ground));
     p.drawText(badge, Qt::AlignCenter, glyph);

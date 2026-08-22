@@ -44,11 +44,13 @@ public:
         Only values still sitting at a known previous default are rewritten, so
         anything the user chose deliberately survives. */
     /** Bump whenever a new migration step is added below. */
-    enum { SettingsVersion = 2 };
+    enum { SettingsVersion = 3 };
 
     void migrate();
     /** Moves pre-redesign game text colours and font size forward. */
     void migrateGameText();
+    /** Switches an existing profile to the column move list. */
+    void migrateNotationLayout();
     /** Moves a pre-redesign board (wood texture, shaded pieces, photo backdrop)
         onto the flat default. */
     void migrateBoardAppearance();

@@ -167,6 +167,10 @@ private:
     OutputOptions m_options;
     /** The name of the current template file */
     QString m_templateFilename;
+    /** Style class for the NAG of the move being written, by severity. */
+    QString m_currentNagClass;
+    /** @return the style class describing the worst judgement in @p nags. */
+    static QString severityClass(const NagSet& nags);
 
     /* Internally used */
     /** Function to render board into image */

@@ -20,7 +20,7 @@ MainLineFontWeight,String,Bold|Normal,Bold,The weight of the font
 <meta http-equiv="content-type" content="text/html; charset=windows-1252">
 <style type="text/css">
   body          {line-height: 155%}\n
-  p             {margin-top: 0; margin-bottom: 6px; line-height: 155%}\n
+  p             {margin-top: 0; margin-bottom: 3px; line-height: 150%}\n
   p.var1        {margin-left: 20px}\n
   p.var2        {margin-left: 40px}\n
   p.var3        {margin-left: 60px}\n
@@ -38,8 +38,15 @@ MainLineFontWeight,String,Bold|Normal,Bold,The weight of the font
   a.var         {font-family:"@FontBrowserMove@";color: @VariationColor@}\n
   a.comment     {color: @CommentColor@; font-style: italic}\n
   a.nag         {color: @NagColor@; font-weight: bold}\n
+  /* Move judgements use the same ramp as the board badges and the report. */\n
+  .nag-good     {color: #0e1413; background-color: #6fae6c; font-weight: bold}\n
+  .nag-idea     {color: #0e1413; background-color: #43ada5; font-weight: bold}\n
+  .nag-warn     {color: #0e1413; background-color: #dfa34e; font-weight: bold}\n
+  .nag-bad      {color: #0e1413; background-color: #df7b46; font-weight: bold}\n
+  .nag-worst    {color: #0e1413; background-color: #cf5546; font-weight: bold}\n
   span.var      {color: @VariationColor@}\n
-  td.mainline   {padding-left: 10px; padding-right: 10px; color: @MainLineMoveColor@; width:50%}\n
+  td.mainline   {padding: 1px 20px 1px 0px; color: @MainLineMoveColor@}\n
+  td.movenum    {padding: 1px 12px 1px 2px; color: @VariationColor@}\n
   .diagram-indent {lfloat: right; margin-top: 8px;}\n
   .mainline {margin-left: 20px; color: @MainLineMoveColor@}\n
   table,th,td {border: 0px;}\n
@@ -88,7 +95,7 @@ MarkupVariationResume9=<p class="var9">,</p>\n
 MarkupNag=<a class="nag">,</a>
 MarkupColumnStyleMove=<td class="mainline">,</td>\n
 MarkupColumnStyleRow=<tr class="mainline">,</tr>\n
-MarkupColumnStyleMainline=<table>,</table>\n
+MarkupColumnStyleMainline=<table class="moves" cellspacing="0" cellpadding="0">,</table>\n
 MarkupAnnotationInline=<a class="comment" href="cmt:%1">,</a>\n
 MarkupAnnotationIndent=<p class="comment"><a class="comment" href="cmt:%1">,</a></p>
 MarkupPreAnnotationInline= <a class="comment" href="precmt:%1">,</a>\n

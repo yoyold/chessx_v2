@@ -264,6 +264,7 @@ QString Output::writeMove(MoveToWrite moveToWrite)
     QString text;
     QString mvno;
     QString nagString;
+    m_currentNagClass.clear();
     QString imageString;
     QString precommentString;
 
@@ -285,6 +286,7 @@ QString Output::writeMove(MoveToWrite moveToWrite)
         if(m_options.getOptionAsBool("SymbolicNag"))
         {
             nagString += m_game.nags(moveId).toString(m_outputType == Html ? NagSet::HTML : NagSet::Simple);
+            m_currentNagClass = severityClass(m_game.nags(moveId));
             if((m_outputType == Html || m_outputType == NotationWidget) && (m_game.nags(moveId).contains(NagDiagram)))
             {
                 int n = m_options.getOptionAsInt("DiagramSize");
@@ -401,7 +403,17 @@ QString Output::writeMove(MoveToWrite moveToWrite)
         // *** Write the nags if there are any
         if(!nagString.isEmpty())
         {
-            text += m_startTagMap[MarkupNag] + nagString + m_endTagMap[MarkupNag];
+            if((m_outputType == Html || m_outputType == NotationWidget) && !m_currentNagClass.isEmpty())
+            {
+                /* A shaded pill makes a blunder as findable in the move list as
+                   it is on the board. */
+                text += QString("<span class=\"%1\">&nbsp;").arg(m_currentNagClass)
+                        + nagString + "&nbsp;</span>";
+            }
+            else
+            {
+                text += m_startTagMap[MarkupNag] + nagString + m_endTagMap[MarkupNag];
+            }
         }
     }
 
@@ -749,6 +761,27 @@ QString Output::writeBasicTagsHTML() const
                 round +
                 m_endTagMap[MarkupHeaderLine] + "\n";
     return text;
+}
+
+QString Output::severityClass(const NagSet& nags)
+{
+    /* The worst judgement wins: a move annotated both "!" and "?!" is the
+       doubtful one as far as a reader scanning for errors is concerned. */
+    QString result;
+    foreach (Nag nag, nags)
+    {
+        switch (nag)
+        {
+        case VeryPoorMove:     return QStringLiteral("nag-worst");
+        case PoorMove:         result = QStringLiteral("nag-bad"); break;
+        case QuestionableMove: if (result.isEmpty()) result = QStringLiteral("nag-warn"); break;
+        case SpeculativeMove:  if (result.isEmpty()) result = QStringLiteral("nag-idea"); break;
+        case VeryGoodMove:
+        case GoodMove:         if (result.isEmpty()) result = QStringLiteral("nag-good"); break;
+        default: break;
+        }
+    }
+    return result;
 }
 
 QString Output::output(const GameX* game, bool upToCurrentMove)

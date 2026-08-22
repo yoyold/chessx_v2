@@ -62,6 +62,10 @@ void Settings::migrate()
     {
         migrateBoardAppearance();
     }
+    if (version < 3)
+    {
+        migrateNotationLayout();
+    }
 
     setValue("/General/SettingsVersion", SettingsVersion);
 }
@@ -103,6 +107,22 @@ void Settings::migrateGameText()
     if (fontSize == 0 || fontSize == 10 || fontSize == 12)
     {
         setValue("FontSize", 13);
+    }
+    endGroup();
+}
+
+void Settings::migrateNotationLayout()
+{
+    /* A move pair per row is how a game is read everywhere else, and it is far
+       easier to follow than a paragraph of running text. */
+    beginGroup("GameText");
+    if (!value("ColumnStyle", false).toBool())
+    {
+        setValue("ColumnStyle", true);
+    }
+    if (value("VariationIndentLevel", 1).toInt() <= 1)
+    {
+        setValue("VariationIndentLevel", 9);
     }
     endGroup();
 }
@@ -355,12 +375,14 @@ QMap<QString, QVariant> Settings::initDefaultValues() const
     map.insert("/General/strictMoveCounter", false);
 
     map.insert("/GameText/FontSize", DEFAULT_FONTSIZE);
-    map.insert("/GameText/ColumnStyle", false);
+    map.insert("/GameText/ColumnStyle", true);      // one move pair per row
     map.insert("/GameText/HTMLComments", true);
     map.insert("/GameText/HideSpecAnnotations", true);
     map.insert("/GameText/SymbolicNag", true);
     map.insert("/GameText/TextWidth", 0);
-    map.insert("/GameText/VariationIndentLevel", 1);
+    /* Sub-lines stay on the line they start on; indenting every one of them
+       turns an annotated game into a staircase. */
+    map.insert("/GameText/VariationIndentLevel", 9);
     map.insert("/GameText/VariationIndentSize", 3);
     map.insert("/GameText/CommentIndent", "Never");
     map.insert("/GameText/MainLineMoveColor", "#efe9df");   // ink
@@ -423,6 +445,7 @@ QMap<QString, QVariant> Settings::initDefaultValues() const
     map.insert("/Board/showVariationArrows", true);
     map.insert("/Board/showTargets", false);
     map.insert("/Board/showEvalBar", true);
+    map.insert("/OpeningTree/ShowBoard", false);
     map.insert("/Board/modernStyle", true);
     map.insert("/Board/showLegalMoves", true);
     map.insert("/Board/animateMoves", true);
