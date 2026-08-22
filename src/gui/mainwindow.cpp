@@ -1232,7 +1232,47 @@ void MainWindow::slotRefreshAnalysisViews()
     if (m_reportPanel)
     {
         m_reportPanel->setResult(GameReport::analyse(game()));
+        m_reportPanel->setProvenance(storedReportLine());
     }
+}
+
+QString MainWindow::storedReportLine()
+{
+    DatabaseInfo* dbInfo = databaseInfo();
+    if (!dbInfo)
+    {
+        return QString();
+    }
+
+    SqliteDatabase* db = qobject_cast<SqliteDatabase*>(dbInfo->database());
+    if (!db)
+    {
+        return QString();   // a PGN keeps no record of the run
+    }
+
+    const StoredReport stored = db->loadReport(dbInfo->currentIndex());
+    if (!stored.isValid())
+    {
+        return QString();
+    }
+
+    /* The figures above are worked out from the moves as they stand now. This
+       line is about the run that produced them, which is the part that cannot
+       be worked out again afterwards. */
+    const QString when = QLocale().toString(
+                QDateTime::fromSecsSinceEpoch(stored.createdAt), QLocale::ShortFormat);
+
+    if (stored.engine.isEmpty())
+    {
+        return tr("Analysed %1").arg(when);
+    }
+    if (stored.secondsMove > 0.0)
+    {
+        return tr("Analysed %1 with %2, %3 s per move")
+                .arg(when, stored.engine)
+                .arg(stored.secondsMove, 0, 'g', 3);
+    }
+    return tr("Analysed %1 with %2").arg(when, stored.engine);
 }
 
 void MainWindow::slotGoToPly(int ply)

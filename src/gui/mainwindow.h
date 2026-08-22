@@ -590,6 +590,9 @@ protected:
     /** Fills the evaluation bar from the figure stored with the current move,
         unless an engine is judging the position right now. */
     void showStoredEvaluation();
+    /** @return a line naming when the stored analysis ran and what made it,
+        or nothing when the game carries no stored report. */
+    QString storedReportLine();
     /** Writes the summary of a finished run into the database, where it keeps
         the one thing the moves cannot say later: when it was made and by which
         engine. Does nothing for databases that have nowhere to put it. */

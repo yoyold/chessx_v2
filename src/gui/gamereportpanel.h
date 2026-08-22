@@ -32,6 +32,11 @@ public:
     /** Drops the current figures. */
     void clear();
 
+    /** Puts @p text under the figures: what the moves cannot say later, which
+        is when the analysis ran and what made it. An empty text removes the
+        line. Set it after setResult(), which clears it. */
+    void setProvenance(const QString& text);
+
 signals:
     /** The user wants to see the half move @p ply. */
     void requestPly(int ply);
@@ -46,6 +51,7 @@ private:
     bool m_hasResult;
     QGridLayout* m_grid;
     QLabel* m_empty;
+    QLabel* m_provenance;
     /** Which entry of each category was visited last, so repeated clicks walk
         through them instead of returning to the same move. */
     QHash<int, int> m_cursor;

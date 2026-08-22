@@ -250,6 +250,11 @@ QLabel#ReportPanelLoss {
     font-size: 8pt;
 }
 
+QLabel#ReportPanelProvenance {
+    color: @muted;
+    font-size: 8pt;
+}
+
 QLabel#ReportPanelEmpty {
     color: @muted;
 }

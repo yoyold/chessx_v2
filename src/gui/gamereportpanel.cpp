@@ -19,7 +19,8 @@ GameReportPanel::GameReportPanel(QWidget* parent)
     : QWidget(parent),
       m_hasResult(false),
       m_grid(nullptr),
-      m_empty(nullptr)
+      m_empty(nullptr),
+      m_provenance(nullptr)
 {
     setObjectName("GameReportPanel");
 
@@ -38,7 +39,21 @@ GameReportPanel::GameReportPanel(QWidget* parent)
     m_grid->setHorizontalSpacing(DesignTokens::Space3);
     m_grid->setVerticalSpacing(2);
     outer->addLayout(m_grid);
+
+    m_provenance = new QLabel(this);
+    m_provenance->setObjectName("ReportPanelProvenance");
+    m_provenance->setWordWrap(true);
+    m_provenance->hide();
+    outer->addWidget(m_provenance);
+
     outer->addStretch(1);
+}
+
+void GameReportPanel::setProvenance(const QString& text)
+{
+    m_provenance->setText(text);
+    /* Only worth the line when there are figures for it to belong to. */
+    m_provenance->setVisible(!text.isEmpty() && m_hasResult);
 }
 
 void GameReportPanel::clear()
@@ -63,6 +78,7 @@ void GameReportPanel::setResult(const GameReport::Result& result)
 
     m_cursor.clear();
     rebuild();
+    setProvenance(QString());
 }
 
 QWidget* GameReportPanel::buildRow(const GameReport::Side& side,
@@ -120,6 +136,10 @@ void GameReportPanel::rebuild()
 
     const bool show = m_hasResult;
     m_empty->setVisible(!show);
+    if (m_provenance && !show)
+    {
+        m_provenance->hide();
+    }
     if (!show)
     {
         return;
