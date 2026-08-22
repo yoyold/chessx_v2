@@ -990,6 +990,123 @@ void MainWindow::slotGameReport()
     dialog.exec();
 }
 
+void MainWindow::slotDatabaseConvert()
+{
+    DatabaseInfo* dbInfo = databaseInfo();
+    if (!dbInfo || !dbInfo->isValid() || !database())
+    {
+        return;
+    }
+
+    if (qobject_cast<SqliteDatabase*>(database()))
+    {
+        MessageDialog::information(tr("%1 already is a ChessX database.")
+                                   .arg(database()->name()), tr("Convert database"));
+        return;
+    }
+
+    const quint64 total = database()->count();
+    if (total == 0)
+    {
+        MessageDialog::information(tr("There are no games to convert."),
+                                   tr("Convert database"));
+        return;
+    }
+
+    /* Same folder, same name, new extension - the source stays exactly where
+       it is and is never written to, so a conversion can be repeated and the
+       PGN remains the backup. */
+    QFileInfo source(database()->filename());
+    QString suggested = source.completeBaseName() + QLatin1Char('.')
+            + SqliteDatabase::fileSuffix();
+    if (!source.absolutePath().isEmpty())
+    {
+        suggested = source.absolutePath() + QDir::separator() + suggested;
+    }
+
+    QString target = QFileDialog::getSaveFileName(
+                this, tr("Convert %1 to a ChessX database").arg(database()->name()),
+                suggested,
+                tr("ChessX database (*.%1)").arg(SqliteDatabase::fileSuffix()));
+    if (target.isEmpty())
+    {
+        return;
+    }
+    if (!SqliteDatabase::isDatabaseFile(target))
+    {
+        target += "." + SqliteDatabase::fileSuffix();
+    }
+    if (QFileInfo(target).absoluteFilePath() == source.absoluteFilePath())
+    {
+        MessageDialog::error(tr("A database cannot be converted onto itself."),
+                             tr("Convert database"));
+        return;
+    }
+
+    warnAboutStorage(target, tr("The new database goes here:"));
+
+    /* getSaveFileName has already asked about replacing it. */
+    QFile::remove(target);
+    QFile::remove(target + "-wal");
+    QFile::remove(target + "-shm");
+
+    QString error;
+    if (!SqliteDatabase::create(target, error))
+    {
+        MessageDialog::error(tr("%1 could not be created. %2").arg(target, error),
+                             tr("Convert database"));
+        return;
+    }
+
+    SqliteDatabase converted;
+    if (!converted.open(target, false) || !converted.parseFile())
+    {
+        MessageDialog::error(tr("%1 could not be opened for writing.").arg(target),
+                             tr("Convert database"));
+        return;
+    }
+
+    startOperation(tr("Converting %1...").arg(database()->name()));
+    quint64 written = 0;
+    {
+        /* One transaction for the lot: a conversion that stops halfway leaves
+           no half-built database behind. */
+        DatabaseTransaction batch(&converted);
+        for (quint64 i = 0; i < total; ++i)
+        {
+            GameX g;
+            if (database()->loadGame(GameId(i), g) && converted.appendGame(g))
+            {
+                ++written;
+            }
+
+            if (i % 64 == 0)
+            {
+                slotOperationProgress(int(100 * i / total));
+                /* The conversion runs here rather than on a thread, as saving a
+                   database does; letting the event loop breathe keeps the
+                   progress moving instead of showing a frozen window. */
+                QApplication::processEvents();
+            }
+        }
+    }
+    converted.close();
+    finishOperation(tr("%1 converted").arg(database()->name()));
+
+    if (written != total)
+    {
+        MessageDialog::warning(tr("Only %1 of %2 games could be converted.")
+                               .arg(written).arg(total), tr("Convert database"));
+    }
+
+    if (MessageDialog::yesNo(tr("%1 now holds %2 games. Open it?")
+                             .arg(QFileInfo(target).fileName()).arg(written),
+                             tr("Convert database")))
+    {
+        openDatabase(target);
+    }
+}
+
 void MainWindow::slotSearchAllFields()
 {
     if (!m_gameSearch || !m_gameList || !databaseInfo())
@@ -2818,6 +2935,9 @@ void MainWindow::setupActions()
     refactorMenu2->addAction(createAction(refactorMenu2, tr("Remove Variations"), SLOT(slotDatabaseRemoveVariations())));
     refactorMenu2->addAction(createAction(refactorMenu2, tr("Prune null moves"), SLOT(slotDatabaseRemoveNullLines())));
     refactorMenu2->addAction(createAction(refactorMenu2, tr("Edit tag"), SLOT(slotDatabaseEditTag())));
+    menuDatabase->addSeparator();
+    menuDatabase->addAction(createAction(tr("Convert to ChessX database..."),
+                                         SLOT(slotDatabaseConvert())));
     menuDatabase->addSeparator();
     menuDatabase->addAction(createAction(tr("Clear clipboard"), SLOT(slotDatabaseClearClipboard())));
 

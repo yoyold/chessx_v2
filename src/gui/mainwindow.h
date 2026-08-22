@@ -160,6 +160,8 @@ protected:
     void slotStoreGameReport();
     /** Narrows the game list to games with the typed text in any field. */
     void slotSearchAllFields();
+    /** Writes the open database out as a ChessX database, game by game. */
+    void slotDatabaseConvert();
     /** Moves the board to a half move picked in the summary. */
     void slotGoToPly(int ply);
     /** Raises a transient notification over the window. */
