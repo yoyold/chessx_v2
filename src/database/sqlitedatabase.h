@@ -8,6 +8,7 @@
 #include "database.h"
 #include "sqlitestore.h"
 
+#include <QSet>
 #include <QVector>
 
 /** @ingroup Database
@@ -50,6 +51,17 @@ public:
     bool loadGame(GameId gameId, GameX& game) override;
     void loadGameMoves(GameId gameId, GameX& game) override;
     int findPosition(GameId gameId, const BoardX& position) override;
+    void findPosition(const BoardX& position, PositionSearchOptions options,
+                      const QList<GameId>& games, QList<MoveId>& output,
+                      QMap<Move, MoveData>& stats) override;
+
+    /** @return true once every game's positions are listed, so a search can
+        ask the index instead of replaying every game in the database. */
+    bool hasPositionIndex() const { return m_positionIndex; }
+    /** Lists the positions of every game. Costs one pass over the database and
+        is done once; a search that needs it triggers it by itself.
+        @return false when the database cannot be written to. */
+    bool buildPositionIndex();
 
     bool appendGame(const GameX& game) override;
     bool replace(GameId gameId, GameX& game) override;
@@ -76,6 +88,14 @@ private:
     bool writeTags(const GameX& game, qint64 rowId);
     /** Stores the evaluations found in @p game, replacing what was there. */
     bool writeEvaluations(const GameX& game, qint64 rowId);
+    /** Lists the positions @p game passes through. Pass false for
+        @p replaceExisting only when the table is known to hold none of this
+        game's rows already - clearing them costs a lookup that a bulk build
+        does not need. */
+    bool writePositions(const GameX& game, qint64 rowId, bool replaceExisting = true);
+    /** @return the games whose main line reaches @p position, as row ids.
+        Only meaningful once the index is built. */
+    QSet<qint64> gamesReaching(const BoardX& position);
     /** Puts the stored evaluations back into @p game as %eval annotations,
         so the rest of ChessX sees what it has always seen. */
     void readEvaluations(GameX& game, qint64 rowId);
@@ -96,6 +116,7 @@ private:
     /** Row ids in index order, so a GameId stays the small dense number the
         rest of ChessX expects. */
     QVector<qint64> m_rowIds;
+    bool m_positionIndex;
 };
 
 #endif // SQLITEDATABASE_H_INCLUDED
