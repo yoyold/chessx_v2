@@ -248,6 +248,7 @@ QString Analysis::toString(const BoardX& board, bool hideLines) const
     if(!hideLines)
     {
         bool atLineStart = true;
+        int moveIndex = 0;
 
         foreach(Move move, variation())
         {
@@ -265,7 +266,18 @@ QString Analysis::toString(const BoardX& board, bool hideLines) const
                moveText += "<b>";
             }
 
+            /* Each move is an anchor so the widget can tell which one the
+               pointer is over and show the position it leads to. It is styled
+               back to ordinary text: the line still reads as a line, not as a
+               row of links. */
+            /* Only a class, never an inline style: Qt's rich text does not
+               know "inherit", and choking on it collapsed the line spacing so
+               the lines were drawn over each other. The widget's document
+               style sheet gives class "mv" the ordinary text colour. */
+            moveText += QString("<a href=\"mv:%1:%2\" class=\"mv\">")
+                        .arg(m_numpv).arg(moveIndex++);
             moveText += testBoard.moveToSan(move, true);
+            moveText += "</a>";
 
             if(atLineStart)
             {

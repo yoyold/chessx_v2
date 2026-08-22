@@ -137,14 +137,23 @@ void GameReportPanel::rebuild()
             QLabel* acc = new QLabel(QString("%1%").arg(side.accuracy, 0, 'f', 1), this);
             acc->setObjectName("ReportPanelAccuracy");
             m_grid->addWidget(acc, 1, column);
+
+            /* Accuracy is a curve fitted to the losses; the losses themselves
+               are the plainer number, and the one a reader can compare between
+               games without knowing the curve. */
+            QLabel* loss = new QLabel(tr("%1 cp lost/move").arg(side.averageLoss, 0, 'f', 0),
+                                      this);
+            loss->setObjectName("ReportPanelLoss");
+            loss->setToolTip(tr("Average centipawn loss over %1 moves").arg(side.moves));
+            m_grid->addWidget(loss, 2, column);
         }
     };
 
     header(m_result.whiteName, m_result.white, 0);
     header(m_result.blackName, m_result.black, 1);
 
-    int rowWhite = 2;
-    int rowBlack = 2;
+    int rowWhite = 3;
+    int rowBlack = 3;
     for (int i = 0; i < GameReport::CategoryCount; ++i)
     {
         const GameReport::Category cat = static_cast<GameReport::Category>(i);

@@ -26,6 +26,8 @@ class QToolButton;
 class Tablebase;
 class Database;
 
+class BoardPopup;
+
 class AnalysisWidget : public QWidget
 {
     Q_OBJECT
@@ -96,6 +98,8 @@ private slots:
     void engineError(QProcess::ProcessError);
     /** Add variation. */
     void slotLinkClicked(const QUrl& link);
+    /** Shows the position a hovered move of an engine line leads to. */
+    void slotLinkHovered(const QUrl& link);
     /** Number of visible lines was changed. */
     void slotMpvChanged(int mpv);
     /** Show tablebase move information. */
@@ -143,6 +147,8 @@ private:
     QList<Analysis> m_analyses;
     Ui::AnalysisWidget ui;
     QPointer<EngineX> m_engine;
+    /** Built the first time a move is hovered, then reused. */
+    QPointer<BoardPopup> m_boardPopup;
     BoardX m_board;
     QString m_line;
     BoardX m_NextBoard;

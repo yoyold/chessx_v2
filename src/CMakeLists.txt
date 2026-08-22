@@ -85,6 +85,8 @@ target_link_libraries(eco
 add_library(database-core STATIC
   database/annotation.cpp
   database/annotation.h
+  database/anytagsearch.cpp
+  database/anytagsearch.h
   database/database.cpp
   database/database.h
   database/filter.cpp
@@ -349,6 +351,8 @@ add_library(gui STATIC
   gui/boardsetuptoolbutton.h
   gui/boardtheme.cpp
   gui/boardtheme.h
+  gui/boardpopup.cpp
+  gui/boardpopup.h
   gui/boardview.cpp
   gui/boardview.h
   gui/boardviewex.cpp

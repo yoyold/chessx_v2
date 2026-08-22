@@ -222,6 +222,34 @@ QLabel#ReportPanelAccuracy {
     font-weight: 600;
 }
 
+QLineEdit#GameSearchBox {
+    background: @raised;
+    border: 1px solid @line;
+    border-radius: @radius-sm;
+    padding: 5px 8px;
+    color: @ink;
+}
+
+QLineEdit#GameSearchBox:focus {
+    border-color: @accent;
+}
+
+QFrame#BoardPopup {
+    background: @overlay;
+    border: 1px solid @line-strong;
+    border-radius: @radius-md;
+}
+
+QLabel#BoardPopupCaption {
+    color: @ink-2;
+    font-size: 9pt;
+}
+
+QLabel#ReportPanelLoss {
+    color: @muted;
+    font-size: 8pt;
+}
+
 QLabel#ReportPanelEmpty {
     color: @muted;
 }

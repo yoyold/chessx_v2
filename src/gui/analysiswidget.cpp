@@ -12,6 +12,7 @@
 #include "settings.h"
 #include "analysis.h"
 #include "analysiswidget.h"
+#include "boardpopup.h"
 #include "designtokens.h"
 #include "vectoricons.h"
 
@@ -71,6 +72,18 @@ AnalysisWidget::AnalysisWidget(QWidget *parent)
 
     connect(ui.variationText, SIGNAL(anchorClicked(QUrl)),
             SLOT(slotLinkClicked(QUrl)));
+    /* A line of analysis is a sentence about a position; hovering one of its
+       moves shows what the sentence actually means. */
+    connect(ui.variationText, SIGNAL(highlighted(QUrl)),
+            SLOT(slotLinkHovered(QUrl)));
+    ui.variationText->setMouseTracking(true);
+
+    /* The moves of a line are anchors so they can be hovered, but they are
+       still moves: this gives them the colour of ordinary text instead of the
+       blue underline every other link gets. */
+    ui.variationText->document()->setDefaultStyleSheet(
+        QString("a.mv { color:%1; text-decoration:none; }")
+        .arg(DesignTokens::color(DesignTokens::Ink).name()));
     connect(ui.vpcount, SIGNAL(valueChanged(int)), SLOT(slotMpvChanged(int)));
     connect(ui.btPin, SIGNAL(clicked(bool)), SLOT(slotPinChanged(bool)));
     ui.engineList->setMinimumWidth(110);
@@ -529,6 +542,12 @@ void AnalysisWidget::sendBookMoveTimeout()
 
 void AnalysisWidget::slotLinkClicked(const QUrl& url)
 {
+    if (url.toString().startsWith(QLatin1String("mv:")))
+    {
+        /* The moves of a line are anchors only so they can be hovered.
+           Reading one as a variation number would add the wrong line. */
+        return;
+    }
     if (m_NextBoard != m_board)
     {
         return; // Pinned and user moved somewhere else
@@ -553,6 +572,56 @@ void AnalysisWidget::slotLinkClicked(const QUrl& url)
             }
         }
     }
+}
+
+void AnalysisWidget::slotLinkHovered(const QUrl& url)
+{
+    const QString link = url.toString();
+    if (!link.startsWith(QLatin1String("mv:")))
+    {
+        if (m_boardPopup)
+        {
+            m_boardPopup->hideBoard();
+        }
+        return;
+    }
+
+    const QStringList parts = link.split(QLatin1Char(':'));
+    if (parts.count() != 3)
+    {
+        return;
+    }
+
+    /* The href carries the engine's own pv number, which maps onto the list of
+       analyses the same way the click handler maps it. */
+    const int index = parts.at(1).toInt() - 1;
+    const int upTo = parts.at(2).toInt();
+    if (index < 0 || index >= m_analyses.count())
+    {
+        return;
+    }
+
+    const QList<Move>& line = m_analyses.at(index).variation();
+    if (upTo < 0 || upTo >= line.count())
+    {
+        return;
+    }
+
+    BoardX board = m_board;
+    QString san;
+    for (int i = 0; i <= upTo; ++i)
+    {
+        /* Plain SAN, not the figurine form: that one comes back as HTML
+           entities, which a label would print literally. */
+        san = board.moveToSan(line.at(i));
+        board.doMove(line.at(i));
+    }
+
+    if (!m_boardPopup)
+    {
+        m_boardPopup = new BoardPopup(this);
+    }
+    m_boardPopup->showBoard(board, tr("after %1").arg(san), QCursor::pos());
 }
 
 void AnalysisWidget::setMoveTime(EngineParameter mt)

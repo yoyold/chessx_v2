@@ -40,6 +40,7 @@ class DatabaseList;
 class DatabaseRegistry;
 class CommandPalette;
 class GameReportPanel;
+class QLineEdit;
 #include "gamereport.h"
 class DockWidgetEx;
 class HomeView;
@@ -157,6 +158,8 @@ protected:
     void slotCommitFullAnalysis();
     /** Puts the summary of the run just finished into the database. */
     void slotStoreGameReport();
+    /** Narrows the game list to games with the typed text in any field. */
+    void slotSearchAllFields();
     /** Moves the board to a half move picked in the summary. */
     void slotGoToPly(int ply);
     /** Raises a transient notification over the window. */
@@ -769,6 +772,8 @@ private:
     QPointer<NavRail> m_navRail;
     QPointer<CommandPalette> m_commandPalette;
     QPointer<GameReportPanel> m_reportPanel;
+    QPointer<QLineEdit> m_gameSearch;
+    QPointer<QTimer> m_gameSearchTimer;
     QPointer<ToastHost> m_toastHost;
     QPointer<HomeView> m_homeView;
     /** Set while a full-game analysis is running, so the report can be shown

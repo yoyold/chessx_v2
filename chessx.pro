@@ -165,6 +165,7 @@ HEADERS += src/database/board.h \
   src/database/abk.h \
   src/database/analysis.h \
   src/database/annotation.h \
+  src/database/anytagsearch.h \
   src/database/arenabook.h \
   src/database/bitboard.h \
   src/database/bitfind.h \
@@ -283,6 +284,7 @@ HEADERS += src/database/board.h \
   src/gui/boardsetup.h \
   src/gui/boardsetuptoolbutton.h \
   src/gui/boardtheme.h \
+  src/gui/boardpopup.h \
   src/gui/boardview.h \
   src/gui/boardviewex.h \
   src/gui/chartwidget.h \
@@ -368,6 +370,7 @@ HEADERS += src/database/board.h \
 SOURCES += \
   src/database/analysis.cpp \
   src/database/annotation.cpp \
+  src/database/anytagsearch.cpp \
   src/database/arenabook.cpp \
   src/database/bitboard.cpp \
   src/database/board.cpp \
@@ -468,6 +471,7 @@ SOURCES += \
   src/gui/boardsetup.cpp \
   src/gui/boardsetuptoolbutton.cpp \
   src/gui/boardtheme.cpp \
+  src/gui/boardpopup.cpp \
   src/gui/boardview.cpp \
   src/gui/boardviewex.cpp \
   src/gui/chartwidget.cpp \

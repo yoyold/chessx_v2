@@ -17,7 +17,9 @@
 
 namespace
 {
-const int BarWidth = 20;
+/* Wide enough that the fill reads as a bar rather than a hairline, and that a
+   two-character score fits on it without being clipped away. */
+const int BarWidth = 30;
 /* Chosen so that +1.00 fills roughly 60% and +5.00 roughly 88%: the range that
    matters to a reader gets most of the travel. */
 const double ScoreCurve = 0.0042;
@@ -94,6 +96,13 @@ void EvalBar::setScoreVisible(bool visible)
 QSize EvalBar::sizeHint() const
 {
     return QSize(BarWidth, 200);
+}
+
+QSize EvalBar::minimumSizeHint() const
+{
+    /* Without a minimum the layout is free to squeeze the bar down to nothing
+       when the board wants the room - which is exactly what it did. */
+    return QSize(BarWidth, 80);
 }
 
 qreal EvalBar::whiteFraction() const
@@ -177,7 +186,7 @@ void EvalBar::paintEvent(QPaintEvent*)
            contrast against the fill behind it. */
         const bool whiteLeads = white >= 0.5;
         QFont f = font();
-        f.setPointSizeF(qMax(6.0, f.pointSizeF() - 2.0));
+        f.setPointSizeF(qMax(8.0, f.pointSizeF() - 1.0));
         f.setBold(true);
         p.setFont(f);
         p.setPen(whiteLeads ? blackSide : whiteSide);

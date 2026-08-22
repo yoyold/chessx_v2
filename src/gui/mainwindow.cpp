@@ -51,6 +51,8 @@
 #include "savedialog.h"
 #include "settings.h"
 #include "sqlitedatabase.h"
+#include "anytagsearch.h"
+#include "designtokens.h"
 #include "storagelocation.h"
 #include "studyselectiondialog.h"
 #include "tags.h"
@@ -82,6 +84,7 @@
 #include <QSplitter>
 #include <QStatusBar>
 #include <QTabBar>
+#include <QLineEdit>
 #include <QTimer>
 #include <QStackedWidget>
 #include <QToolBar>
@@ -268,7 +271,34 @@ MainWindow::MainWindow() : QMainWindow(),
     connect(m_gameList, SIGNAL(searchFinished()), SLOT(slotBoardSearchFinished()));
 
     connect(this, SIGNAL(reconfigure()), m_gameList, SLOT(slotReconfigure()));
-    gameListDock->setWidget(m_gameList);
+    /* One box over the list that looks in every field, because remembering
+       which field a name was in is not how anyone looks for a game. */
+    {
+        QWidget* host = new QWidget(gameListDock);
+        QVBoxLayout* hostLayout = new QVBoxLayout(host);
+        hostLayout->setContentsMargins(DesignTokens::Space2, DesignTokens::Space2,
+                                       DesignTokens::Space2, 0);
+        hostLayout->setSpacing(DesignTokens::Space2);
+
+        m_gameSearch = new QLineEdit(host);
+        m_gameSearch->setObjectName("GameSearchBox");
+        m_gameSearch->setPlaceholderText(tr("Search players, events, ECO, dates..."));
+        m_gameSearch->setClearButtonEnabled(true);
+        hostLayout->addWidget(m_gameSearch);
+        hostLayout->addWidget(m_gameList, 1);
+
+        /* Typing runs a search over the whole database; waiting for a pause
+           keeps every keystroke from starting one. */
+        m_gameSearchTimer = new QTimer(this);
+        m_gameSearchTimer->setSingleShot(true);
+        m_gameSearchTimer->setInterval(300);
+        connect(m_gameSearch, SIGNAL(textChanged(QString)),
+                m_gameSearchTimer, SLOT(start()));
+        connect(m_gameSearchTimer, SIGNAL(timeout()), SLOT(slotSearchAllFields()));
+        connect(m_gameSearch, SIGNAL(returnPressed()), SLOT(slotSearchAllFields()));
+
+        gameListDock->setWidget(host);
+    }
     m_menuView->addAction(gameListDock->toggleViewAction());
     gameListDock->toggleViewAction()->setShortcut(Qt::CTRL | Qt::Key_L);
     connect(m_gameList, SIGNAL(raiseRequest()), gameListDock, SLOT(raise()));
@@ -958,6 +988,32 @@ void MainWindow::slotGameReport()
 {
     GameReport dialog(GameReport::analyse(game()), this);
     dialog.exec();
+}
+
+void MainWindow::slotSearchAllFields()
+{
+    if (!m_gameSearch || !m_gameList || !databaseInfo())
+    {
+        return;
+    }
+
+    const QString text = m_gameSearch->text().trimmed();
+    if (text.isEmpty())
+    {
+        /* An empty box is not a search for nothing - it is the absence of a
+           search, so every game comes back. */
+        if (FilterX* filter = databaseInfo()->filter())
+        {
+            filter->setAll(1);
+            m_gameList->updateFilter(0, 1);
+            slotFilterChanged();
+        }
+        return;
+    }
+
+    m_gameList->executeSearch(new AnyTagSearch(database(), text),
+                              FilterOperator::NullOperator);
+    slotStatusMessage(tr("Searching all fields for \"%1\"...").arg(text));
 }
 
 void MainWindow::slotStoreGameReport()
