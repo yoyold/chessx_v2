@@ -559,15 +559,38 @@ INCLUDEPATH += $$[QT_INSTALL_PREFIX]/src/3rdparty/zlib
 
 # SQLite is compiled into ChessX rather than reached through a driver plugin:
 # nothing extra to deploy, and no way for a missing DLL to make databases
-# silently unopenable. CHESSX_SQLITE_DIR points at a toolchain that ships the
-# static library; without it the build falls back to a system-wide -lsqlite3.
+# silently unopenable.
+#
+# Where it comes from, in order:
+#   1. CHESSX_SQLITE_DIR=<path> on the qmake command line,
+#   2. dep/sqlite/sqlite3.c - the amalgamation from sqlite.org, compiled in.
+#      Drop it there (with sqlite3.h) and the build stops depending on
+#      anything outside the repository, which is what a build on another
+#      machine needs,
+#   3. a toolchain that happens to ship the static library,
+#   4. a system-wide -lsqlite3.
+CHESSX_SQLITE_SOURCE = $$PWD/dep/sqlite
 isEmpty(CHESSX_SQLITE_DIR) {
-  CHESSX_SQLITE_DIR = C:/Qt/Tools/mingw1310_64/opt
+  CHESSX_SQLITE_CANDIDATES =     $$[QT_HOST_PREFIX]/../../Tools/mingw1310_64/opt     C:/Qt/Tools/mingw1310_64/opt     /usr /usr/local
+  for(candidate, CHESSX_SQLITE_CANDIDATES) {
+    isEmpty(CHESSX_SQLITE_DIR):exists($$candidate/include/sqlite3.h) {
+      CHESSX_SQLITE_DIR = $$candidate
+    }
+  }
 }
-exists($$CHESSX_SQLITE_DIR/include/sqlite3.h) {
+
+exists($$CHESSX_SQLITE_SOURCE/sqlite3.c) {
+  # Vendored: nothing outside the repository is needed to build.
+  message("SQLite: compiling the amalgamation in dep/sqlite")
+  INCLUDEPATH += $$CHESSX_SQLITE_SOURCE
+  SOURCES += $$CHESSX_SQLITE_SOURCE/sqlite3.c
+  DEFINES += SQLITE_ENABLE_COLUMN_METADATA SQLITE_THREADSAFE=1
+} else:exists($$CHESSX_SQLITE_DIR/include/sqlite3.h) {
+  message("SQLite: using the library in $$CHESSX_SQLITE_DIR")
   INCLUDEPATH += $$CHESSX_SQLITE_DIR/include
-  LIBS += $$CHESSX_SQLITE_DIR/lib/libsqlite3.a
+  LIBS += -L$$CHESSX_SQLITE_DIR/lib -lsqlite3
 } else {
+  message("SQLite: falling back to a system-wide -lsqlite3")
   LIBS += -lsqlite3
 }
 

@@ -927,6 +927,89 @@ StoredReport SqliteDatabase::loadReport(GameId gameId)
     return report;
 }
 
+bool SqliteDatabase::saveLines(GameId gameId, const QList<StoredLine>& lines)
+{
+    const qint64 rowId = rowIdFor(gameId);
+    if (rowId < 0 || m_readOnly)
+    {
+        return false;
+    }
+
+    m_store.begin();
+
+    SqliteStatement clear(m_store, "DELETE FROM game_line WHERE game_id = ?");
+    clear.bind(1, rowId);
+    if (!clear.execute())
+    {
+        m_store.rollback();
+        return false;
+    }
+
+    SqliteStatement insert(m_store,
+        "INSERT INTO game_line (game_id, ply, rank, score_cp, mate_in, depth, moves)"
+        " VALUES (?, ?, 0, ?, ?, ?, ?)");
+    if (!insert.isValid())
+    {
+        m_store.rollback();
+        return false;
+    }
+
+    foreach (const StoredLine& line, lines)
+    {
+        if (!line.isValid())
+        {
+            continue;
+        }
+        insert.reset();
+        insert.bind(1, rowId);
+        insert.bind(2, line.ply);
+        insert.bind(3, line.hasMate ? QVariant() : QVariant(line.scoreCp));
+        insert.bind(4, line.hasMate ? QVariant(line.mateIn) : QVariant());
+        insert.bind(5, line.depth > 0 ? QVariant(line.depth) : QVariant());
+        insert.bind(6, line.moves);
+        if (!insert.execute())
+        {
+            m_store.rollback();
+            return false;
+        }
+    }
+
+    m_store.commit();
+    return true;
+}
+
+StoredLine SqliteDatabase::loadLine(GameId gameId, int ply)
+{
+    StoredLine line;
+    const qint64 rowId = rowIdFor(gameId);
+    if (rowId < 0)
+    {
+        return line;
+    }
+
+    SqliteStatement row(m_store,
+        "SELECT score_cp, mate_in, depth, moves FROM game_line"
+        " WHERE game_id = ? AND ply = ? AND rank = 0");
+    if (!row.isValid())
+    {
+        return line;
+    }
+    row.bind(1, rowId);
+    row.bind(2, ply);
+    if (!row.step())
+    {
+        return line;
+    }
+
+    line.ply = ply;
+    line.hasMate = !row.isNull(1);
+    line.scoreCp = int(row.integer(0));
+    line.mateIn = int(row.integer(1));
+    line.depth = int(row.integer(2));
+    line.moves = row.text(3);
+    return line;
+}
+
 bool SqliteDatabase::appendGame(const GameX& game)
 {
     const qint64 rowId = writeGame(game, -1);

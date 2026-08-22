@@ -1184,6 +1184,12 @@ void MainWindow::storeGameReport(const GameReport::Result& result)
     {
         slotToast(tr("Report stored with the game."), ToastHost::Success);
     }
+
+    /* The engine's own suggestions go beside the game, never into it. */
+    if (!m_analysisLines.isEmpty())
+    {
+        db->saveLines(dbInfo->currentIndex(), m_analysisLines);
+    }
 }
 
 void MainWindow::slotCommitFullAnalysis()
@@ -1234,6 +1240,68 @@ void MainWindow::slotRefreshAnalysisViews()
         m_reportPanel->setResult(GameReport::analyse(game()));
         m_reportPanel->setProvenance(storedReportLine());
     }
+}
+
+void MainWindow::rememberEngineLine(const Analysis& analysis, MoveId node)
+{
+    if (analysis.variation().isEmpty())
+    {
+        return;
+    }
+
+    StoredLine line;
+    line.ply = game().ply(node);
+    line.depth = analysis.depth();
+    line.hasMate = analysis.isMate();
+    line.mateIn = analysis.movesToMate();
+    line.scoreCp = analysis.score();
+
+    /* Read out as a player would say it, from the position being judged. Eight
+       half moves is as far as a suggestion stays a suggestion; past that it is
+       the engine talking to itself. */
+    BoardX board = game().board();
+    QStringList san;
+    const int wanted = qMin(8, analysis.variation().count());
+    for (int i = 0; i < wanted; ++i)
+    {
+        const Move move = analysis.variation().at(i);
+        san << board.moveToSan(move);
+        board.doMove(move);
+    }
+    line.moves = san.join(QLatin1Char(' '));
+
+    m_analysisLines.append(line);
+}
+
+void MainWindow::showStoredLine()
+{
+    if (!m_reportPanel)
+    {
+        return;
+    }
+
+    DatabaseInfo* dbInfo = databaseInfo();
+    SqliteDatabase* db = dbInfo ? qobject_cast<SqliteDatabase*>(dbInfo->database())
+                                : nullptr;
+    if (!db)
+    {
+        m_reportPanel->setMoveNote(QString());
+        return;
+    }
+
+    const StoredLine line = db->loadLine(dbInfo->currentIndex(), game().ply());
+    if (!line.isValid())
+    {
+        m_reportPanel->setMoveNote(QString());
+        return;
+    }
+
+    const QString score = line.hasMate
+            ? tr("mate in %1").arg(qAbs(line.mateIn))
+            : QString("%1%2").arg(line.scoreCp >= 0 ? "+" : "")
+                             .arg(line.scoreCp / 100.0, 0, 'f', 2);
+
+    m_reportPanel->setMoveNote(tr("Engine here: %1  (%2)").arg(line.moves, score));
 }
 
 QString MainWindow::storedReportLine()

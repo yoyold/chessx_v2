@@ -37,6 +37,11 @@ public:
         line. Set it after setResult(), which clears it. */
     void setProvenance(const QString& text);
 
+    /** Shows what the stored analysis wanted to play at the move currently on
+        the board. An empty text removes the line. Survives setResult(), since
+        it belongs to the move rather than to the game. */
+    void setMoveNote(const QString& text);
+
 signals:
     /** The user wants to see the half move @p ply. */
     void requestPly(int ply);
@@ -52,6 +57,7 @@ private:
     QGridLayout* m_grid;
     QLabel* m_empty;
     QLabel* m_provenance;
+    QLabel* m_moveNote;
     /** Which entry of each category was visited last, so repeated clicks walk
         through them instead of returning to the same move. */
     QHash<int, int> m_cursor;

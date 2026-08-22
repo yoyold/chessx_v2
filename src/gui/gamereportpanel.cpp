@@ -20,7 +20,8 @@ GameReportPanel::GameReportPanel(QWidget* parent)
       m_hasResult(false),
       m_grid(nullptr),
       m_empty(nullptr),
-      m_provenance(nullptr)
+      m_provenance(nullptr),
+      m_moveNote(nullptr)
 {
     setObjectName("GameReportPanel");
 
@@ -40,6 +41,13 @@ GameReportPanel::GameReportPanel(QWidget* parent)
     m_grid->setVerticalSpacing(2);
     outer->addLayout(m_grid);
 
+    m_moveNote = new QLabel(this);
+    m_moveNote->setObjectName("ReportPanelMoveNote");
+    m_moveNote->setWordWrap(true);
+    m_moveNote->setTextInteractionFlags(Qt::TextSelectableByMouse);
+    m_moveNote->hide();
+    outer->addWidget(m_moveNote);
+
     m_provenance = new QLabel(this);
     m_provenance->setObjectName("ReportPanelProvenance");
     m_provenance->setWordWrap(true);
@@ -47,6 +55,12 @@ GameReportPanel::GameReportPanel(QWidget* parent)
     outer->addWidget(m_provenance);
 
     outer->addStretch(1);
+}
+
+void GameReportPanel::setMoveNote(const QString& text)
+{
+    m_moveNote->setText(text);
+    m_moveNote->setVisible(!text.isEmpty());
 }
 
 void GameReportPanel::setProvenance(const QString& text)

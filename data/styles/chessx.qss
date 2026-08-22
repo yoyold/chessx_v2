@@ -250,6 +250,15 @@ QLabel#ReportPanelLoss {
     font-size: 8pt;
 }
 
+QLabel#ReportPanelMoveNote {
+    color: @ink-2;
+    background: @raised;
+    border: 1px solid @line;
+    border-radius: @radius-sm;
+    padding: 6px 8px;
+    font-size: 9pt;
+}
+
 QLabel#ReportPanelProvenance {
     color: @muted;
     font-size: 8pt;

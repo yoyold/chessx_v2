@@ -34,6 +34,27 @@ struct StoredReport
 };
 
 /** @ingroup Database
+    What the engine wanted to play at one point of a game.
+
+    The run works these out and, until now, threw them away: writing them into
+    the game text is exactly what turns somebody's own PGN into engine spam.
+    Kept beside the game instead, they can be shown without touching a word of
+    what the player wrote.
+*/
+struct StoredLine
+{
+    StoredLine() : ply(-1), scoreCp(0), mateIn(0), depth(0), hasMate(false) {}
+    bool isValid() const { return ply >= 0 && !moves.isEmpty(); }
+
+    int ply;            ///< half move the line starts from
+    int scoreCp;        ///< centipawns from White's point of view
+    int mateIn;         ///< signed, only meaningful when hasMate
+    int depth;
+    bool hasMate;
+    QString moves;      ///< the line in SAN, as it would be read out
+};
+
+/** @ingroup Database
     A ChessX database (@c .cxdb): one SQLite file holding the games.
 
     What a PGN would hold - moves, comments, NAGs - stays in one piece of PGN
@@ -84,6 +105,12 @@ public:
     /** @return the most recent report stored for @p gameId, or an invalid one
         when the game has never been analysed. */
     StoredReport loadReport(GameId gameId);
+
+    /** Stores @p lines with @p gameId, replacing whatever a previous run left.
+        @return false when the database cannot be written to. */
+    bool saveLines(GameId gameId, const QList<StoredLine>& lines);
+    /** @return what the engine wanted to play at @p ply, or an invalid line. */
+    StoredLine loadLine(GameId gameId, int ply);
 
     /** @return true once every game's positions are listed, so a search can
         ask the index instead of replaying every game in the database. */

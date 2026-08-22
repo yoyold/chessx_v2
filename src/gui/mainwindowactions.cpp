@@ -1391,8 +1391,9 @@ void MainWindow::moveChanged()
     m_boardView->setBoard(g.board(), from, to, game().atLineEnd());
 
     /* Whatever the analysis stored for this move belongs in the bar as soon as
-       the move is on the board. */
+       the move is on the board - and so does what the engine wanted instead. */
     showStoredEvaluation();
+    showStoredLine();
 
     /* Badge the move just played with its own judgement, if it has one. */
     int quality = 0;
@@ -2401,6 +2402,7 @@ void MainWindow::slotGameAnalyzeFull()
     /* Kept so the finished analysis can be handed to the database as one
        change, and so the whole run can be undone as one step. */
     m_gameBeforeFullAnalysis = game();
+    m_analysisLines.clear();
 
     /* Start from a known end of the game so the run covers all of it; which end
        depends on the direction the user has configured. */
@@ -2795,6 +2797,7 @@ void MainWindow::slotEngineTimeout(const Analysis& analysis)
                     if (lastNode != NO_MOVE)
                     {
                         game().dbPrependAnnotation(scoreText(a), ' ', lastNode);
+                        rememberEngineLine(a, lastNode);
                     }
 
                     if (!threashold || ((lastScore != -9999) && (abs(score-lastScore) > threashold)))

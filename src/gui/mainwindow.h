@@ -42,6 +42,7 @@ class CommandPalette;
 class GameReportPanel;
 class QLineEdit;
 #include "gamereport.h"
+#include "sqlitedatabase.h"
 class DockWidgetEx;
 class HomeView;
 class NavRail;
@@ -590,6 +591,11 @@ protected:
     /** Fills the evaluation bar from the figure stored with the current move,
         unless an engine is judging the position right now. */
     void showStoredEvaluation();
+    /** Notes down what @p analysis wanted to play at @p node. */
+    void rememberEngineLine(const Analysis& analysis, MoveId node);
+    /** Shows in the report panel what the stored run wanted to play at the
+        move now on the board, or nothing when there is no such line. */
+    void showStoredLine();
     /** @return a line naming when the stored analysis ran and what made it,
         or nothing when the game carries no stored report. */
     QString storedReportLine();
@@ -788,6 +794,9 @@ private:
         analysis be handed to the database as a change rather than being left
         in memory. */
     GameX m_gameBeforeFullAnalysis;
+    /** What the engine wanted to play, gathered as the run goes and written
+        with the game at the end. */
+    QList<StoredLine> m_analysisLines;
     /** False until start-up finishes, so the dashboard is not closed by the
         empty game that is loaded while the window is being built. */
     bool m_homeDismissable;
