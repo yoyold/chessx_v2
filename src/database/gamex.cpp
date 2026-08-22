@@ -1264,7 +1264,12 @@ GameX::AnnotationFilter GameX::textFilter() const
 
 GameX::AnnotationFilter GameX::textFilter2() const
 {
-    return AppSettings->getValue("/GameText/HideSpecAnnotations").toBool() ? static_cast<GameX::AnnotationFilter>(GameX::FilterTan | GameX::FilterCan) : FilterNone;
+    /* Eval markers are for the graph and the report to read, not for the
+       reader; they were filtered from the move text but not from the game
+       comment, so they leaked through there. */
+    return AppSettings->getValue("/GameText/HideSpecAnnotations").toBool()
+            ? static_cast<GameX::AnnotationFilter>(GameX::FilterTan | GameX::FilterCan | GameX::FilterEval)
+            : FilterNone;
 }
 
 QString GameX::textAnnotation(MoveId moveId, Position position, AnnotationFilter f) const
@@ -1873,6 +1878,56 @@ void GameX::scoreTimes(QList<double>& seconds) const
     if (!anyTime)
     {
         seconds.clear();   // nothing worth plotting
+    }
+}
+
+void GameX::scorePhases(int& middlegamePly, int& endgamePly) const
+{
+    /* Phase boundaries follow the usual practical definitions rather than a
+       fixed move number: the middlegame starts once both sides have developed
+       and castled or lost the right to, and the endgame once the heavy pieces
+       are largely gone. Counting material is enough for a graph axis. */
+    middlegamePly = -1;
+    endgamePly = -1;
+
+    GameX g = *this;
+    g.moveToStart();
+
+    int ply = 0;
+    while (g.forward())
+    {
+        ++ply;
+        const BoardX& b = g.board();
+
+        int majors = 0;   // queens and rooks
+        int minors = 0;   // bishops and knights
+        for (Square s = a1; s < NumSquares; ++s)
+        {
+            switch (pieceType(b.pieceAt(s)))
+            {
+            case Queen:
+            case Rook:   ++majors; break;
+            case Bishop:
+            case Knight: ++minors; break;
+            default: break;
+            }
+        }
+
+        /* Opening ends once a good part of the back ranks has been traded or
+           developed; 20 plies is the conventional floor. */
+        if (middlegamePly < 0 && ply >= 20)
+        {
+            middlegamePly = ply;
+        }
+        /* Endgame once few pieces beyond pawns and kings remain. */
+        if (endgamePly < 0 && (majors + minors) <= 6)
+        {
+            endgamePly = ply;
+            if (middlegamePly < 0)
+            {
+                middlegamePly = ply;   // a game that skipped straight there
+            }
+        }
     }
 }
 

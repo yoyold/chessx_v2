@@ -232,6 +232,7 @@ void DatabaseInfo::updateMaterial()
     m_game.scoreMaterial(m_material);
     m_game.scoreEvaluations(m_evaluations);
     m_game.scoreTimes(m_times);
+    m_game.scorePhases(m_middlegamePly, m_endgamePly);
     emit signalGameModified(!m_undoStack->isClean());
 }
 
@@ -282,6 +283,16 @@ const QList<double>& DatabaseInfo::evaluations() const
 const QList<double>& DatabaseInfo::times() const
 {
     return m_times;
+}
+
+int DatabaseInfo::middlegamePly() const
+{
+    return m_middlegamePly;
+}
+
+int DatabaseInfo::endgamePly() const
+{
+    return m_endgamePly;
 }
 
 void DatabaseInfo::restoreState(const GameX& game)

@@ -126,11 +126,17 @@ public:
     QList<double> m_material;
     QList<double> m_evaluations;
     QList<double> m_times;
+    int m_middlegamePly;
+    int m_endgamePly;
 
     const QList<double> &material() const;
     const QList<double> &evaluations() const;
     /** Seconds spent per half move; empty when the game has no time data. */
     const QList<double> &times() const;
+    /** Half move where the middlegame begins, or -1. */
+    int middlegamePly() const;
+    /** Half move where the endgame begins, or -1. */
+    int endgamePly() const;
 
     static QString ficsPath();
 

@@ -356,6 +356,9 @@ public :
         side's own previous reading. The list is empty when the game carries no
         usable time information at all. */
     void scoreTimes(QList<double>& seconds) const;
+    /** Finds where the middlegame and the endgame begin, as half move indices,
+        or -1 for a phase the game never reaches. */
+    void scorePhases(int& middlegamePly, int& endgamePly) const;
 
     /** @return ECO code for the game */
     QString ecoClassify() const;

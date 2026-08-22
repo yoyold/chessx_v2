@@ -104,9 +104,9 @@ void Settings::migrateGameText()
     /* 10pt was the old Windows default and is too small for a densely
        annotated game text. Only the previous defaults are moved on. */
     const int fontSize = value("FontSize", 0).toInt();
-    if (fontSize == 0 || fontSize == 10 || fontSize == 12)
+    if (fontSize == 0 || fontSize == 10 || fontSize == 12 || fontSize == 13)
     {
-        setValue("FontSize", 13);
+        setValue("FontSize", 15);
     }
     endGroup();
 }
@@ -376,6 +376,7 @@ QMap<QString, QVariant> Settings::initDefaultValues() const
 
     map.insert("/GameText/FontSize", DEFAULT_FONTSIZE);
     map.insert("/GameText/ColumnStyle", true);      // one move pair per row
+    map.insert("/GameText/ShowMaterialGraph", false);
     map.insert("/GameText/HTMLComments", true);
     map.insert("/GameText/HideSpecAnnotations", true);
     map.insert("/GameText/SymbolicNag", true);

@@ -51,6 +51,11 @@ void GameToolBar::slotDisplayEvaluations(const QList<double>& evaluations)
     m_chart->setValues(1, evaluations);
 }
 
+void GameToolBar::slotDisplayPhases(int middlegamePly, int endgamePly)
+{
+    m_chart->setPhases(middlegamePly, endgamePly);
+}
+
 void GameToolBar::slotDisplayTimes(const QList<double>& seconds)
 {
     /* Time is a duration, not a balance, so it grows from the floor rather than
