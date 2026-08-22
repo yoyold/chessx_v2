@@ -39,6 +39,7 @@ class DatabaseInfo;
 class DatabaseList;
 class DatabaseRegistry;
 class CommandPalette;
+class GameReportPanel;
 class DockWidgetEx;
 class HomeView;
 class NavRail;
@@ -149,6 +150,10 @@ protected:
     void slotGameReport();
     /** Runs the engine over the whole game, then shows the report. */
     void slotGameAnalyzeFull();
+    /** Recomputes the summary shown under the engine output. */
+    void slotRefreshReportPanel();
+    /** Moves the board to a half move picked in the summary. */
+    void slotGoToPly(int ply);
     /** Raises a transient notification over the window. */
     void slotToast(const QString& text, int severity);
     /** Shows the dashboard page. */
@@ -746,6 +751,7 @@ private:
     QPointer<QSplitter> m_boardSplitter;
     QPointer<NavRail> m_navRail;
     QPointer<CommandPalette> m_commandPalette;
+    QPointer<GameReportPanel> m_reportPanel;
     QPointer<ToastHost> m_toastHost;
     QPointer<HomeView> m_homeView;
     /** Set while a full-game analysis is running, so the report can be shown

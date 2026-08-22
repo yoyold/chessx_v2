@@ -54,10 +54,39 @@ double moveAccuracy(double before, double after)
 } // namespace
 
 GameReport::Side::Side()
-    : accuracy(0.0), averageLoss(0.0), moves(0),
-      brilliant(0), good(0), interesting(0),
-      inaccuracies(0), mistakes(0), blunders(0)
+    : accuracy(0.0), averageLoss(0.0), moves(0)
 {}
+
+QString GameReport::categoryName(Category category, int count)
+{
+    /* "1 Blunders" reads as a typo, so the three countable categories carry a
+       singular form. The first three are adjectives and do not inflect. */
+    const bool one = (count == 1);
+    switch (category)
+    {
+    case Brilliant:   return tr("Brilliant");
+    case Good:        return tr("Good");
+    case Interesting: return tr("Interesting");
+    case Inaccuracy:  return one ? tr("Inaccuracy") : tr("Inaccuracies");
+    case Mistake:     return one ? tr("Mistake") : tr("Mistakes");
+    case Blunder:     return one ? tr("Blunder") : tr("Blunders");
+    default:          return QString();
+    }
+}
+
+QColor GameReport::categoryColor(Category category)
+{
+    switch (category)
+    {
+    case Brilliant:
+    case Good:        return DesignTokens::color(DesignTokens::Good);
+    case Interesting: return DesignTokens::color(DesignTokens::Accent);
+    case Inaccuracy:  return DesignTokens::color(DesignTokens::Inaccuracy);
+    case Mistake:     return DesignTokens::color(DesignTokens::Mistake);
+    case Blunder:     return DesignTokens::color(DesignTokens::Blunder);
+    default:          return DesignTokens::color(DesignTokens::Muted);
+    }
+}
 
 GameReport::Result::Result()
     : hasEvaluations(false)
@@ -95,12 +124,14 @@ QString GameReport::toHtml(const Result& result)
                         .arg(s.averageLoss, 0, 'f', 0).arg(s.moves).toHtmlEscaped());
         }
         h += "<table style=\"margin-top:10px\">";
-        h += countRow(tr("Brilliant"), s.brilliant, "#3f7d46");
-        h += countRow(tr("Good"), s.good, "#3f7d46");
-        h += countRow(tr("Interesting"), s.interesting, accent);
-        h += countRow(tr("Inaccuracies"), s.inaccuracies, "#a9701a");
-        h += countRow(tr("Mistakes"), s.mistakes, "#b4541f");
-        h += countRow(tr("Blunders"), s.blunders, "#a83226");
+        static const char* const printColors[CategoryCount] =
+        { "#3f7d46", "#3f7d46", "#1b7a73", "#a9701a", "#b4541f", "#a83226" };
+        for (int i = 0; i < CategoryCount; ++i)
+        {
+            const Category cat = static_cast<Category>(i);
+            h += countRow(categoryName(cat, s.count(cat)), s.count(cat),
+                          QString::fromLatin1(printColors[i]));
+        }
         h += "</table></td>";
         return h;
     };
@@ -194,17 +225,18 @@ GameReport::Result GameReport::analyse(const GameX& game)
         const bool whiteMoved = (ply % 2 == 0);
         Side& side = whiteMoved ? result.white : result.black;
 
-        /* Move quality, from whatever the analysis run annotated. */
+        /* Move quality, from whatever the analysis run annotated. Recording the
+           ply as well as the count is what lets a reader jump to the move. */
         foreach (Nag nag, walker.nags())
         {
             switch (nag)
             {
-            case VeryGoodMove:     ++side.brilliant; break;
-            case GoodMove:         ++side.good; break;
-            case SpeculativeMove:  ++side.interesting; break;
-            case QuestionableMove: ++side.inaccuracies; break;
-            case PoorMove:         ++side.mistakes; break;
-            case VeryPoorMove:     ++side.blunders; break;
+            case VeryGoodMove:     side.plies[Brilliant].append(ply); break;
+            case GoodMove:         side.plies[Good].append(ply); break;
+            case SpeculativeMove:  side.plies[Interesting].append(ply); break;
+            case QuestionableMove: side.plies[Inaccuracy].append(ply); break;
+            case PoorMove:         side.plies[Mistake].append(ply); break;
+            case VeryPoorMove:     side.plies[Blunder].append(ply); break;
             default: break;
             }
         }
@@ -298,18 +330,12 @@ QWidget* GameReport::buildSide(const QString& name, const Side& side, bool hasEv
     }
 
     l->addSpacing(DesignTokens::Space2);
-    l->addWidget(buildCount(tr("Brilliant"), side.brilliant,
-                            DesignTokens::color(DesignTokens::Good).name()));
-    l->addWidget(buildCount(tr("Good"), side.good,
-                            DesignTokens::color(DesignTokens::Good).name()));
-    l->addWidget(buildCount(tr("Interesting"), side.interesting,
-                            DesignTokens::color(DesignTokens::Accent).name()));
-    l->addWidget(buildCount(tr("Inaccuracies"), side.inaccuracies,
-                            DesignTokens::color(DesignTokens::Inaccuracy).name()));
-    l->addWidget(buildCount(tr("Mistakes"), side.mistakes,
-                            DesignTokens::color(DesignTokens::Mistake).name()));
-    l->addWidget(buildCount(tr("Blunders"), side.blunders,
-                            DesignTokens::color(DesignTokens::Blunder).name()));
+    for (int i = 0; i < CategoryCount; ++i)
+    {
+        const Category cat = static_cast<Category>(i);
+        l->addWidget(buildCount(categoryName(cat, side.count(cat)), side.count(cat),
+                                categoryColor(cat).name()));
+    }
     l->addStretch(1);
     return card;
 }

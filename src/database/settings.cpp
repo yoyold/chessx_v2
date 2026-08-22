@@ -465,7 +465,13 @@ QMap<QString, QVariant> Settings::initDefaultValues() const
     /* Whether an analysis run writes text comments into the game. The move
        judgements (NAGs) and the variations it finds are kept either way. */
     map.insert("/Board/AnnotateText", false);
-    map.insert("/Board/BlunderCheck", 0);
+    /* Whether a run inserts the engine's own lines into the game as variations.
+       Adding a variation to your own game is a bigger edit than annotating it,
+       so it is asked for rather than assumed. */
+    map.insert("/Board/AnnotateVariations", false);
+    /* Centipawns of swing before a move is worth annotating. Zero used to mean
+       "annotate everything, with a variation", which buried the game. */
+    map.insert("/Board/BlunderCheck", 50);
     map.insert("/Board/AutoPromoteToQueen", false);
     map.insert("/Board/AlwaysScale", false);
     map.insert("/Board/PlayerTurnBoard", "");

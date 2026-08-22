@@ -457,6 +457,8 @@ add_library(gui STATIC
   dialogs/settingssearch.h
   gui/gamereport.cpp
   gui/gamereport.h
+  gui/gamereportpanel.cpp
+  gui/gamereportpanel.h
   gui/homeview.cpp
   gui/homeview.h
   gui/navrail.cpp

@@ -5,7 +5,9 @@
 #ifndef GAMEREPORT_H_INCLUDED
 #define GAMEREPORT_H_INCLUDED
 
+#include <QColor>
 #include <QDialog>
+#include <QList>
 #include <QString>
 
 class GameX;
@@ -26,21 +28,28 @@ class GameReport : public QDialog
     Q_OBJECT
 
 public:
+    /** How a move was judged, in the order they are shown. */
+    enum Category { Brilliant, Good, Interesting, Inaccuracy, Mistake, Blunder, CategoryCount };
+
     /** The figures for one player. */
     struct Side
     {
         Side();
 
+        /** Half-move indices carrying each judgement, in playing order. */
+        QList<int> plies[CategoryCount];
+        /** @return how many moves fall in @p category. */
+        int count(Category category) const { return plies[category].count(); }
+
         double accuracy;        ///< 0 to 100, the mean per-move accuracy
         double averageLoss;     ///< mean centipawn loss
         int moves;              ///< moves counted
-        int brilliant;          ///< !!
-        int good;               ///< !
-        int interesting;        ///< !?
-        int inaccuracies;       ///< ?!
-        int mistakes;           ///< ?
-        int blunders;           ///< ??
     };
+
+    /** @return the display name of @p category for @p count moves. */
+    static QString categoryName(Category category, int count = 2);
+    /** @return the token colour @p category is shown in. */
+    static QColor categoryColor(Category category);
 
     /** The whole report. */
     struct Result

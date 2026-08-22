@@ -1342,8 +1342,25 @@ void MainWindow::moveChanged()
     const GameX& g = game();
     MoveId m = g.currentMove();
 
+    /* m_currentFrom/To are only filled in by the paths that play a move. Every
+       other way of arriving at a position - jumping to a ply, clicking the
+       notation or the graph, stepping with the arrows - leaves them unset, and
+       the board then loses both the last-move highlight and the badge. The game
+       always knows which move led here, so ask it. */
+    Square from = m_currentFrom;
+    Square to = m_currentTo;
+    if ((from == InvalidSquare || to == InvalidSquare) && !g.atGameStart())
+    {
+        const Move played = g.move();
+        if (!played.isNullMove())
+        {
+            from = played.from();
+            to = played.to();
+        }
+    }
+
     // Set board first
-    m_boardView->setBoard(g.board(), m_currentFrom, m_currentTo, game().atLineEnd());
+    m_boardView->setBoard(g.board(), from, to, game().atLineEnd());
 
     /* Badge the move just played with its own judgement, if it has one. */
     int quality = 0;
@@ -2712,7 +2729,8 @@ void MainWindow::slotEngineTimeout(const Analysis& analysis)
                     QString text = AppSettings->getValue("/Board/AddAnnotation").toString() + "/TB " + ((score>0)?tr("White wins"):((score<0)?tr("Black wins"):tr("Draw")));
                     if (!threashold || ((lastScore != -9999) && (abs(score-lastScore) > threashold)))
                     {
-                        if (!threashold || AppSettings->getValue("/Board/BackwardAnalysis").toBool())
+                        if (AppSettings->getValue("/Board/AnnotateVariations").toBool() &&
+                            (!threashold || AppSettings->getValue("/Board/BackwardAnalysis").toBool()))
                         {
                             if(!game().currentNodeHasMove(m.from(), m.to()))
                             {
@@ -2733,9 +2751,22 @@ void MainWindow::slotEngineTimeout(const Analysis& analysis)
                 {
                     int score = a.score();
                     lastNode = game().currentMove();
+
+                    /* Record the evaluation on every analysed move, not only on
+                       the ones worth a judgement: the graph and the report read
+                       these. It is a special annotation, so it stays out of the
+                       game text. */
+                    if (lastNode != NO_MOVE)
+                    {
+                        game().dbPrependAnnotation(scoreText(a), ' ', lastNode);
+                    }
+
                     if (!threashold || ((lastScore != -9999) && (abs(score-lastScore) > threashold)))
                     {
-                        if (!threashold || AppSettings->getValue("/Board/BackwardAnalysis").toBool())
+                        const bool addVariations =
+                                AppSettings->getValue("/Board/AnnotateVariations").toBool();
+                        if (addVariations &&
+                            (!threashold || AppSettings->getValue("/Board/BackwardAnalysis").toBool()))
                         {
                             if (!gameAddAnalysis(a, autoAnnotationText()))
                             {
@@ -2755,10 +2786,6 @@ void MainWindow::slotEngineTimeout(const Analysis& analysis)
                                 game().dbPrependAnnotation(prefix, ' ', lastNode);
                             }
                             addAutoNag(m.color(), score, lastScore, threashold, lastNode);
-                            if (AppSettings->getValue("/Board/AnnotateScore").toBool())
-                            {
-                                game().prependAnnotation(scoreText(a), 0);
-                            }
                             UpdateGameText();
                         }
                     }
@@ -3022,7 +3049,8 @@ void MainWindow::AutoMoveAtEndOfGame()
                 {
                     m_reportAfterAnalysis = false;
                     /* Queued: let the engine finish shutting down and the game
-                       text settle before a modal dialog takes over. */
+                       text settle before the summary is computed. */
+                    QTimer::singleShot(0, this, SLOT(slotRefreshReportPanel()));
                     QTimer::singleShot(0, this, SLOT(slotGameReport()));
                 }
             }

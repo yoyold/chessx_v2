@@ -83,6 +83,7 @@
 #include "commandpalette.h"
 #include "evalbar.h"
 #include "gamereport.h"
+#include "gamereportpanel.h"
 #include "homeview.h"
 #include "navrail.h"
 #include "toasthost.h"
@@ -707,7 +708,27 @@ void MainWindow::raiseDockByName(const QString& objectName)
 
 void MainWindow::setupAnalysisWidget(DockWidgetEx* analysisDock, AnalysisWidget* analysis)
 {
-    analysisDock->setWidget(analysis);
+    if (analysis == m_mainAnalysis)
+    {
+        /* The engine output rarely fills the dock; the space under it is where a
+           reader looks next, so the game summary goes there rather than into a
+           dialog that has to be dismissed. */
+        QWidget* host = new QWidget(analysisDock);
+        QVBoxLayout* hostLayout = new QVBoxLayout(host);
+        hostLayout->setContentsMargins(0, 0, 0, 0);
+        hostLayout->setSpacing(0);
+        hostLayout->addWidget(analysis, 3);
+
+        m_reportPanel = new GameReportPanel(host);
+        connect(m_reportPanel, SIGNAL(requestPly(int)), SLOT(slotGoToPly(int)));
+        hostLayout->addWidget(m_reportPanel, 2);
+
+        analysisDock->setWidget(host);
+    }
+    else
+    {
+        analysisDock->setWidget(analysis);
+    }
     // addDockWidget(Qt::RightDockWidgetArea, analysisDock);
     connect(analysis, SIGNAL(addVariation(Analysis,QString)),
             SLOT(slotGameAddVariation(Analysis,QString)));
@@ -785,6 +806,8 @@ void MainWindow::setupHomeView()
         {
             slotShowBoard();
         }
+        /* A different game means different figures. */
+        slotRefreshReportPanel();
     });
 
     slotRefreshHome();
@@ -921,6 +944,21 @@ void MainWindow::slotGameReport()
 {
     GameReport dialog(GameReport::analyse(game()), this);
     dialog.exec();
+}
+
+void MainWindow::slotRefreshReportPanel()
+{
+    if (m_reportPanel)
+    {
+        m_reportPanel->setResult(GameReport::analyse(game()));
+    }
+}
+
+void MainWindow::slotGoToPly(int ply)
+{
+    /* The summary counts half moves from the start of the game, which is what
+       the notation's own navigation works in. */
+    slotGameMoveToPly(ply + 1);
 }
 
 void MainWindow::slotCommandPalette()

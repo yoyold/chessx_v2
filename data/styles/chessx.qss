@@ -203,6 +203,30 @@ QListWidget#SettingsSearchResults::item:hover {
 }
 
 /* --------------------------------------------------------------------------
+   Game report panel
+   -------------------------------------------------------------------------- */
+
+QWidget#GameReportPanel {
+    background: @ground;
+    border-top: 1px solid @line;
+}
+
+QLabel#ReportPanelName {
+    color: @ink;
+    font-weight: 600;
+}
+
+QLabel#ReportPanelAccuracy {
+    color: @accent;
+    font-size: 17pt;
+    font-weight: 600;
+}
+
+QLabel#ReportPanelEmpty {
+    color: @muted;
+}
+
+/* --------------------------------------------------------------------------
    Game report
    -------------------------------------------------------------------------- */
 

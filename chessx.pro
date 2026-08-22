@@ -334,6 +334,7 @@ HEADERS += src/database/board.h \
   src/gui/evalbar.h \
   src/dialogs/settingssearch.h \
   src/gui/gamereport.h \
+  src/gui/gamereportpanel.h \
   src/gui/homeview.h \
   src/gui/navrail.h \
   src/gui/playercard.h \
@@ -516,6 +517,7 @@ SOURCES += \
   src/gui/evalbar.cpp \
   src/dialogs/settingssearch.cpp \
   src/gui/gamereport.cpp \
+  src/gui/gamereportpanel.cpp \
   src/gui/homeview.cpp \
   src/gui/navrail.cpp \
   src/gui/playercard.cpp \
