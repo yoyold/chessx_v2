@@ -12,6 +12,28 @@
 #include <QVector>
 
 /** @ingroup Database
+    A game report as it is stored: the figures, plus how they came about.
+
+    The counts and accuracies could be worked out again from the moves at any
+    time; when the run happened, and which engine did it, could not. That is
+    what makes storing it worth anything.
+*/
+struct StoredReport
+{
+    StoredReport()
+        : createdAt(0), secondsMove(0.0), whiteAccuracy(0.0), blackAccuracy(0.0) {}
+    /** @return false when no report has been stored for the game. */
+    bool isValid() const { return createdAt != 0; }
+
+    qint64 createdAt;       ///< seconds since the epoch, 0 when there is none
+    QString engine;
+    double secondsMove;     ///< how long the engine was given per move
+    double whiteAccuracy;
+    double blackAccuracy;
+    QString detail;         ///< JSON: the half moves behind each judgement
+};
+
+/** @ingroup Database
     A ChessX database (@c .cxdb): one SQLite file holding the games.
 
     What a PGN would hold - moves, comments, NAGs - stays in one piece of PGN
@@ -54,6 +76,14 @@ public:
     void findPosition(const BoardX& position, PositionSearchOptions options,
                       const QList<GameId>& games, QList<MoveId>& output,
                       QMap<Move, MoveData>& stats) override;
+
+    /** Stores @p report with @p gameId. Earlier reports are kept, so a game
+        analysed twice keeps both runs on record.
+        @return false when the database cannot be written to. */
+    bool saveReport(GameId gameId, const StoredReport& report);
+    /** @return the most recent report stored for @p gameId, or an invalid one
+        when the game has never been analysed. */
+    StoredReport loadReport(GameId gameId);
 
     /** @return true once every game's positions are listed, so a search can
         ask the index instead of replaying every game in the database. */

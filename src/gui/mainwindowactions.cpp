@@ -3089,6 +3089,7 @@ void MainWindow::AutoMoveAtEndOfGame()
                        the stored game. */
                     QTimer::singleShot(0, this, SLOT(slotCommitFullAnalysis()));
                     QTimer::singleShot(0, this, SLOT(slotRefreshAnalysisViews()));
+                    QTimer::singleShot(0, this, SLOT(slotStoreGameReport()));
                     QTimer::singleShot(0, this, SLOT(slotGameReport()));
                 }
             }

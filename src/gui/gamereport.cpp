@@ -159,33 +159,6 @@ QString GameReport::toHtml(const Result& result)
     return html;
 }
 
-void GameReport::slotSave()
-{
-    QString suggested = m_result.event.isEmpty() ? tr("game-report") : m_result.event;
-    /* Keep the suggestion usable as a file name on any platform. */
-    suggested.replace(QRegularExpression("[^\\w\\-. ]"), "_");
-
-    const QString path = QFileDialog::getSaveFileName(
-                this, tr("Save report"),
-                suggested + ".html",
-                tr("HTML page (*.html);;All files (*)"));
-    if (path.isEmpty())
-    {
-        return;
-    }
-
-    QFile file(path);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
-    {
-        MessageDialog::warning(tr("The report could not be written to %1.").arg(path));
-        return;
-    }
-    QTextStream out(&file);
-    out.setEncoding(QStringConverter::Utf8);
-    out << toHtml(m_result);
-    file.close();
-}
-
 GameReport::Result GameReport::analyse(const GameX& game)
 {
     Result result;
@@ -389,9 +362,10 @@ GameReport::GameReport(const Result& result, QWidget* parent)
     sides->addWidget(buildSide(result.blackName, result.black, result.hasEvaluations));
     root->addLayout(sides, 1);
 
+    /* No "save" here any more: a finished run puts its report into the
+       database by itself, where it stays with the game instead of in a
+       file somebody has to keep track of. */
     QDialogButtonBox* buttons = new QDialogButtonBox(QDialogButtonBox::Close, this);
-    QPushButton* save = buttons->addButton(tr("Save report..."), QDialogButtonBox::ActionRole);
-    connect(save, SIGNAL(clicked()), SLOT(slotSave()));
     connect(buttons, SIGNAL(rejected()), SLOT(reject()));
     connect(buttons, SIGNAL(accepted()), SLOT(accept()));
     root->addWidget(buttons);

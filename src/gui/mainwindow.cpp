@@ -50,6 +50,7 @@
 #include "quazipfile.h"
 #include "savedialog.h"
 #include "settings.h"
+#include "sqlitedatabase.h"
 #include "storagelocation.h"
 #include "studyselectiondialog.h"
 #include "tags.h"
@@ -72,6 +73,10 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 #include <QProgressBar>
+#include <QDateTime>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QRegularExpression>
 #include <QSizePolicy>
 #include <QSplitter>
@@ -953,6 +958,59 @@ void MainWindow::slotGameReport()
 {
     GameReport dialog(GameReport::analyse(game()), this);
     dialog.exec();
+}
+
+void MainWindow::slotStoreGameReport()
+{
+    storeGameReport(GameReport::analyse(game()));
+}
+
+void MainWindow::storeGameReport(const GameReport::Result& result)
+{
+    DatabaseInfo* dbInfo = databaseInfo();
+    if (!dbInfo)
+    {
+        return;
+    }
+
+    SqliteDatabase* db = qobject_cast<SqliteDatabase*>(dbInfo->database());
+    if (!db || db->isReadOnly())
+    {
+        /* A PGN has nowhere to keep a report; the figures stay derivable from
+           the game either way, so this is not worth complaining about. */
+        return;
+    }
+
+    StoredReport stored;
+    stored.createdAt = QDateTime::currentSecsSinceEpoch();
+    stored.engine = m_mainAnalysis ? m_mainAnalysis->engineName() : QString();
+    stored.secondsMove = AppSettings->getValue("/Board/AnalysisTime").toDouble();
+    stored.whiteAccuracy = result.white.accuracy;
+    stored.blackAccuracy = result.black.accuracy;
+
+    /* The half moves behind each count travel with the report, so a stored
+       run can still take a reader to the moves it is talking about. */
+    QJsonObject detail;
+    for (int i = 0; i < GameReport::CategoryCount; ++i)
+    {
+        const GameReport::Category cat = static_cast<GameReport::Category>(i);
+        QJsonArray whitePlies, blackPlies;
+        foreach (int ply, result.white.plies[cat]) { whitePlies.append(ply); }
+        foreach (int ply, result.black.plies[cat]) { blackPlies.append(ply); }
+        if (!whitePlies.isEmpty() || !blackPlies.isEmpty())
+        {
+            QJsonObject entry;
+            entry.insert("white", whitePlies);
+            entry.insert("black", blackPlies);
+            detail.insert(GameReport::categoryName(cat, 2), entry);
+        }
+    }
+    stored.detail = QString::fromUtf8(QJsonDocument(detail).toJson(QJsonDocument::Compact));
+
+    if (db->saveReport(dbInfo->currentIndex(), stored))
+    {
+        slotToast(tr("Report stored with the game."), ToastHost::Success);
+    }
 }
 
 void MainWindow::slotCommitFullAnalysis()

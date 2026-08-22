@@ -870,6 +870,63 @@ void SqliteDatabase::findPosition(const BoardX& position, PositionSearchOptions 
     }
 }
 
+bool SqliteDatabase::saveReport(GameId gameId, const StoredReport& report)
+{
+    const qint64 rowId = rowIdFor(gameId);
+    if (rowId < 0 || m_readOnly)
+    {
+        return false;
+    }
+
+    SqliteStatement insert(m_store,
+        "INSERT INTO game_report (game_id, created_at, engine, seconds_move,"
+        " white_accuracy, black_accuracy, detail) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    if (!insert.isValid())
+    {
+        return false;
+    }
+
+    insert.bind(1, rowId);
+    insert.bind(2, report.createdAt);
+    insert.bind(3, report.engine.isEmpty() ? QVariant() : QVariant(report.engine));
+    insert.bind(4, report.secondsMove > 0.0 ? QVariant(report.secondsMove) : QVariant());
+    insert.bind(5, report.whiteAccuracy);
+    insert.bind(6, report.blackAccuracy);
+    insert.bind(7, report.detail.isEmpty() ? QVariant() : QVariant(report.detail));
+    return insert.execute();
+}
+
+StoredReport SqliteDatabase::loadReport(GameId gameId)
+{
+    StoredReport report;
+    const qint64 rowId = rowIdFor(gameId);
+    if (rowId < 0)
+    {
+        return report;
+    }
+
+    SqliteStatement row(m_store,
+        "SELECT created_at, engine, seconds_move, white_accuracy, black_accuracy,"
+        " detail FROM game_report WHERE game_id = ? ORDER BY created_at DESC LIMIT 1");
+    if (!row.isValid())
+    {
+        return report;
+    }
+    row.bind(1, rowId);
+    if (!row.step())
+    {
+        return report;
+    }
+
+    report.createdAt     = row.integer(0);
+    report.engine        = row.text(1);
+    report.secondsMove   = row.value(2).toDouble();
+    report.whiteAccuracy = row.value(3).toDouble();
+    report.blackAccuracy = row.value(4).toDouble();
+    report.detail        = row.text(5);
+    return report;
+}
+
 bool SqliteDatabase::appendGame(const GameX& game)
 {
     const qint64 rowId = writeGame(game, -1);

@@ -40,6 +40,7 @@ class DatabaseList;
 class DatabaseRegistry;
 class CommandPalette;
 class GameReportPanel;
+#include "gamereport.h"
 class DockWidgetEx;
 class HomeView;
 class NavRail;
@@ -154,6 +155,8 @@ protected:
     void slotRefreshAnalysisViews();
     /** Stores a finished full-game analysis with the game. */
     void slotCommitFullAnalysis();
+    /** Puts the summary of the run just finished into the database. */
+    void slotStoreGameReport();
     /** Moves the board to a half move picked in the summary. */
     void slotGoToPly(int ply);
     /** Raises a transient notification over the window. */
@@ -582,6 +585,10 @@ protected:
     /** Fills the evaluation bar from the figure stored with the current move,
         unless an engine is judging the position right now. */
     void showStoredEvaluation();
+    /** Writes the summary of a finished run into the database, where it keeps
+        the one thing the moves cannot say later: when it was made and by which
+        engine. Does nothing for databases that have nowhere to put it. */
+    void storeGameReport(const GameReport::Result& result);
     /** Says so when @p path sits on storage a database cannot be trusted to,
         at most once per path. @p subject names what is at that place. */
     void warnAboutStorage(const QString& path, const QString& subject);

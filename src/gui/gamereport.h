@@ -70,12 +70,10 @@ public:
 
     explicit GameReport(const Result& result, QWidget* parent = nullptr);
 
-    /** @return the report as a self-contained HTML page. */
+    /** @return the report as a self-contained HTML page. Kept for anything
+        that wants to show or print one; the report itself is stored in the
+        database, not written to a file. */
     static QString toHtml(const Result& result);
-
-private slots:
-    /** Asks for a file and writes the report to it. */
-    void slotSave();
 
 private:
     /** Builds the block of figures for one player. */
