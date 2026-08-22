@@ -229,6 +229,9 @@ HEADERS += src/database/board.h \
   src/database/result.h \
   src/database/search.h \
   src/database/settings.h \
+  src/database/sqlitedatabase.h \
+  src/database/sqlitestore.h \
+  src/database/storagelocation.h \
   src/database/spellchecker.h \
   src/database/square.h \
   src/database/streamdatabase.h \
@@ -422,6 +425,9 @@ SOURCES += \
   src/database/result.cpp \
   src/database/search.cpp \
   src/database/settings.cpp \
+  src/database/sqlitedatabase.cpp \
+  src/database/sqlitestore.cpp \
+  src/database/storagelocation.cpp \
   src/database/spellchecker.cpp \
   src/database/streamdatabase.cpp \
   src/database/tablebase.cpp \
@@ -546,6 +552,20 @@ INCLUDEPATH += src/gui
 INCLUDEPATH += src/dialogs
 INCLUDEPATH += src/quazip
 INCLUDEPATH += $$[QT_INSTALL_PREFIX]/src/3rdparty/zlib
+
+# SQLite is compiled into ChessX rather than reached through a driver plugin:
+# nothing extra to deploy, and no way for a missing DLL to make databases
+# silently unopenable. CHESSX_SQLITE_DIR points at a toolchain that ships the
+# static library; without it the build falls back to a system-wide -lsqlite3.
+isEmpty(CHESSX_SQLITE_DIR) {
+  CHESSX_SQLITE_DIR = C:/Qt/Tools/mingw1310_64/opt
+}
+exists($$CHESSX_SQLITE_DIR/include/sqlite3.h) {
+  INCLUDEPATH += $$CHESSX_SQLITE_DIR/include
+  LIBS += $$CHESSX_SQLITE_DIR/lib/libsqlite3.a
+} else {
+  LIBS += -lsqlite3
+}
 
 win32-g++ {
   # MinGW ships its own zlib, and quazip needs the gz* file helpers.

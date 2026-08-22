@@ -82,7 +82,7 @@ public:
     EvalAnnotation(QString a=QString()) : Annotation(a) {};
     /* Accepts the shapes seen in the wild: "1.35", "-0.4", "35,20"
        (centipawns and depth), "#3" and "#-3". */
-    virtual QRegularExpression filter() const { return QRegularExpression("\\[%(eval)\\s*((-?\\d+(?:[.,]\\d+)?)|(?:#-?\\d+))\\]"); };
+    virtual QRegularExpression filter() const { return QRegularExpression("\\[%(eval)\\s*(([-+]?\\d+(?:[.,]\\d+)?)|(?:#[-+]?\\d+))\\]"); };
     virtual QString asAnnotation() const { return annotation.isEmpty() ? QString() : QString("[%eval %1]").arg(annotation); };
 };
 

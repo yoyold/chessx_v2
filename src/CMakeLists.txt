@@ -213,6 +213,12 @@ add_library(database STATIC
   database/positionsearch.h
   database/settings.cpp
   database/settings.h
+  database/sqlitedatabase.cpp
+  database/sqlitedatabase.h
+  database/sqlitestore.cpp
+  database/sqlitestore.h
+  database/storagelocation.cpp
+  database/storagelocation.h
   database/spellchecker.cpp
   database/spellchecker.h
   database/streamdatabase.cpp

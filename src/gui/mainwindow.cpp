@@ -50,6 +50,7 @@
 #include "quazipfile.h"
 #include "savedialog.h"
 #include "settings.h"
+#include "storagelocation.h"
 #include "studyselectiondialog.h"
 #include "tags.h"
 #include "textedit.h"
@@ -591,6 +592,14 @@ MainWindow::MainWindow() : QMainWindow(),
 
     QTimer::singleShot(0, this, [this]() { m_homeDismissable = true; });
 
+    /* Queued so it lands after the window is up and the toast has somewhere to
+       appear. */
+    QTimer::singleShot(0, this, [this]()
+    {
+        warnAboutStorage(QCoreApplication::applicationDirPath(),
+                         tr("ChessX is running from here:"));
+    });
+
     qApp->installEventFilter(this);
     /* Activate clipboard */
     slotDatabaseChanged();
@@ -1035,6 +1044,25 @@ void MainWindow::slotEvaluationCleared()
        being nothing to show: whatever the analysis stored for this move takes
        over again. */
     showStoredEvaluation();
+}
+
+void MainWindow::warnAboutStorage(const QString& path, const QString& subject)
+{
+    if (path.isEmpty() || m_storageWarned.contains(path)
+            || !AppSettings->getValue("/General/warnStorageLocation").toBool())
+    {
+        return;
+    }
+
+    const QString risk = StorageLocation::warning(StorageLocation::inspect(path));
+    if (risk.isEmpty())
+    {
+        return;
+    }
+
+    m_storageWarned.insert(path);
+    slotToast(QString("%1 %2").arg(subject, risk), ToastHost::Warning);
+    slotStatusMessage(risk);
 }
 
 void MainWindow::showStoredEvaluation()
@@ -1802,6 +1830,16 @@ void MainWindow::copyDatabaseArchive(QString fname, QString destination)
                 }
                 zip.close();
             }
+            else
+            {
+                /* Not a database ChessX knows and not an archive either.
+                   Saying nothing at all leaves the user looking at a window
+                   that did not change, with no idea why. */
+                slotStatusMessage(tr("Cannot open %1.").arg(fname));
+                slotToast(tr("ChessX cannot open %1 - the file is neither a "
+                             "database it knows nor an archive.")
+                          .arg(QFileInfo(fname).fileName()), ToastHost::Error);
+            }
         }
     }
 }
@@ -1924,6 +1962,8 @@ void MainWindow::openDatabaseFile(QString fname, bool utf8)
         /* Check if the database is already open */
         return;
     }
+
+    warnAboutStorage(fname, tr("This database is stored here:"));
 
     // Create database, connect progress bar and open file
     DatabaseInfo* db = new DatabaseInfo(&m_undoGroup,fname);

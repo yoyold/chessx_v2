@@ -363,6 +363,7 @@ QMap<QString, QVariant> Settings::initDefaultValues() const
     map.insert("/General/automaticECO", true);
     map.insert("/General/preserveECO", true);
     map.insert("/General/useIndexFile", true);
+    map.insert("/General/warnStorageLocation", true);
     map.insert("/General/ListFontSize", DEFAULT_LISTFONTSIZE);
     map.insert("/General/onlineTablebases", true);
     map.insert("/General/tablebaseSource", 0);

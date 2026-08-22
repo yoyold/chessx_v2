@@ -22,6 +22,7 @@
 #include "polyglotdatabase.h"
 #include "qt6compat.h"
 #include "settings.h"
+#include "sqlitedatabase.h"
 #include "tags.h"
 
 #ifdef USE_SCID
@@ -81,6 +82,10 @@ DatabaseInfo::DatabaseInfo(QUndoGroup* undoGroup, const QString& fname): m_filte
     else if (IsChessbaseBook())
     {
         m_database = new CtgDatabase;
+    }
+    else if (SqliteDatabase::isDatabaseFile(fname))
+    {
+        m_database = new SqliteDatabase;
     }
     else if(file.size()/(1024 * 1024) < AppSettings->getValue("/General/EditLimit").toInt())
     {
@@ -524,7 +529,8 @@ bool DatabaseInfo::IsBook() const
     QFileInfo fi = QFileInfo(s);
     QString suffix = fi.suffix().toLower();
 
-    return ((suffix == "pgn") ||
+    return ((suffix == SqliteDatabase::fileSuffix()) ||
+            (suffix == "pgn") ||
             (suffix == "si4") ||
             (suffix == "bin") ||
             (suffix == "abk") ||

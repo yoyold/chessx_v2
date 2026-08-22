@@ -59,6 +59,7 @@
 #include "renametagdialog.h"
 #include "shellhelper.h"
 #include "settings.h"
+#include "sqlitedatabase.h"
 #include "streamdatabase.h"
 #include "studyselectiondialog.h"
 #include "tablebase.h"
@@ -95,13 +96,38 @@
 
 void MainWindow::slotFileNew()
 {
+    /* A ChessX database is offered first: it is written a game at a time and
+       cannot be left half-rewritten, which a PGN file can. */
+    QString selected;
     QString file = QFileDialog::getSaveFileName(this, tr("New database"),
                    AppSettings->value("/General/DefaultDataPath").toString(),
-                   tr("PGN database (*.pgn)"));
+                   tr("ChessX database (*.cxdb);;PGN database (*.pgn)"),
+                   &selected);
     if(file.isEmpty())
     {
         return;
     }
+
+    const bool wantsPgn = selected.contains(".pgn")
+            || file.endsWith(".pgn", Qt::CaseInsensitive);
+    if (!wantsPgn)
+    {
+        if (!SqliteDatabase::isDatabaseFile(file))
+        {
+            file += "." + SqliteDatabase::fileSuffix();
+        }
+        QFile::remove(file);        // getSaveFileName has already asked
+        QString error;
+        if (!SqliteDatabase::create(file, error))
+        {
+            MessageDialog::warning(tr("Cannot create ChessX database.") + " " + error,
+                                   tr("New database"));
+            return;
+        }
+        openDatabase(file);
+        return;
+    }
+
     if(!file.endsWith(".pgn", Qt::CaseInsensitive))
     {
         file += ".pgn";
@@ -121,7 +147,9 @@ void MainWindow::slotFileNew()
 void MainWindow::slotFileOpen()
 {
     QStringList filters;
-    filters << tr("PGN databases (*.pgn)")
+    filters << tr("ChessX databases (*.cxdb *.pgn)")
+           << tr("ChessX databases (*.cxdb)")
+           << tr("PGN databases (*.pgn)")
 #ifdef USE_SCID
            << tr("Scid databases (*.si4)")
 #endif

@@ -582,6 +582,11 @@ protected:
     /** Fills the evaluation bar from the figure stored with the current move,
         unless an engine is judging the position right now. */
     void showStoredEvaluation();
+    /** Says so when @p path sits on storage a database cannot be trusted to,
+        at most once per path. @p subject names what is at that place. */
+    void warnAboutStorage(const QString& path, const QString& subject);
+    /** Paths already reported, so opening a database twice is not two toasts. */
+    QSet<QString> m_storageWarned;
     bool ActivateDatabase(QString fname);
     bool addRemoteMoveFrom64Char(QString s);
     void newGame();
