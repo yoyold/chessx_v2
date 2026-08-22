@@ -175,6 +175,8 @@ private:
     bool m_utf8;
     bool m_hadBOM;
     bool testBOM();
+    /** @return true when the file is UTF-8 even though it carries no BOM. */
+    bool testUtf8Content();
 };
 
 #endif

@@ -1155,8 +1155,7 @@ void MainWindow::slotCloseAnalysisProgress()
 void MainWindow::slotStopAnalysisRun()
 {
     /* The report belongs to a run that reached the end of the game; a stopped
-       one has only judged part of it, so it is not offered. What was analysed
-       up to here stays on the game. */
+       one has only judged part of it, so none is stored. */
     m_reportAfterAnalysis = false;
     closeAnalysisProgress();
 
@@ -1164,8 +1163,15 @@ void MainWindow::slotStopAnalysisRun()
     {
         m_autoAnalysis->trigger();
     }
+
+    /* What was judged before the stop is still worth keeping. Saying it stays
+       with the game and then leaving it in memory would be a promise the next
+       reload breaks - which is exactly what stopping used to do. */
+    QTimer::singleShot(0, this, SLOT(slotCommitFullAnalysis()));
+    QTimer::singleShot(0, this, SLOT(slotRefreshAnalysisViews()));
+
     slotStatusMessage(tr("Analysis stopped."));
-    slotToast(tr("Analysis stopped. What was judged so far stays with the game."),
+    slotToast(tr("Analysis stopped. What was judged so far has been saved."),
               ToastHost::Info);
 }
 

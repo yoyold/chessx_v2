@@ -48,6 +48,9 @@ public:
     static double winningChances(double pawns);
     void setPly(int ply);
 
+    QSize sizeHint() const override;
+    QSize minimumSizeHint() const override;
+
 signals:
     void halfMoveRequested(int);
 

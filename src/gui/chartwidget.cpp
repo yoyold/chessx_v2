@@ -121,6 +121,20 @@ void ChartWidget::setValues(int line, const QList<double>& values)
     updatePolygon(line);
 }
 
+QSize ChartWidget::sizeHint() const
+{
+    return QSize(400, 110);
+}
+
+QSize ChartWidget::minimumSizeHint() const
+{
+    /* A widget with no size hint is one the layout may squeeze to nothing, and
+       the tool bar did: at around 25 pixels a decisive game and a level one
+       draw the same near-flat line. The graph has to be tall enough for the
+       shape of the game to be its point. */
+    return QSize(160, 72);
+}
+
 void ChartWidget::setPly(int ply)
 {
     m_ply = ply;

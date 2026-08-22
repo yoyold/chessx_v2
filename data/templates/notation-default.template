@@ -36,7 +36,7 @@ MainLineFontWeight,String,Bold|Normal,Bold,The weight of the font
   /* Moves carry the line; everything else steps back from them. */\n
   a.main        {font-family:"@FontBrowserMove@";color: @MainLineMoveColor@; font-weight: bold}\n
   a.var         {font-family:"@FontBrowserMove@";color: @VariationColor@}\n
-  a.comment     {color: @CommentColor@; font-style: italic}\n
+  /* Comments explain the moves, they do not compete with them. */\n  a.comment     {color: @CommentColor@; font-style: italic; font-size: 90%}\n
   a.nag         {color: @NagColor@; font-weight: bold}\n
   /* Move judgements use the same ramp as the board badges and the report. */\n
   .nag-good     {color: #0e1413; background-color: #6fae6c; font-weight: bold}\n

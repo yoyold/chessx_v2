@@ -127,6 +127,81 @@ void DatabaseInfo::run()
     if (!fname.isEmpty()) doLoadFile(fname);
 }
 
+namespace
+{
+
+/** @return true when @p bytes are valid UTF-8 @em and hold at least one
+    character outside ASCII - the only case where the answer changes anything.
+
+    A PGN file carries no declaration of its encoding, so the question can only
+    be answered by looking. Valid multi-byte UTF-8 is not something Latin-1 text
+    produces by accident: an umlaut written as Latin-1 is a lone byte above 127,
+    which is not a legal UTF-8 sequence. Overlong forms and surrogates are
+    rejected for the same reason - they are what mis-encoded text looks like.
+*/
+bool looksLikeUtf8(const QByteArray& bytes)
+{
+    bool sawMultiByte = false;
+    int i = 0;
+    const int n = bytes.size();
+
+    while (i < n)
+    {
+        const unsigned char c = static_cast<unsigned char>(bytes.at(i));
+        if (c < 0x80)
+        {
+            ++i;
+            continue;
+        }
+
+        int following = 0;
+        unsigned int cp = 0;
+        if ((c & 0xE0) == 0xC0)      { following = 1; cp = c & 0x1Fu; }
+        else if ((c & 0xF0) == 0xE0) { following = 2; cp = c & 0x0Fu; }
+        else if ((c & 0xF8) == 0xF0) { following = 3; cp = c & 0x07u; }
+        else                         { return false; }
+
+        if (i + following >= n)
+        {
+            break;      // the chunk stops mid-character; not evidence either way
+        }
+
+        for (int k = 1; k <= following; ++k)
+        {
+            const unsigned char cont = static_cast<unsigned char>(bytes.at(i + k));
+            if ((cont & 0xC0) != 0x80)
+            {
+                return false;
+            }
+            cp = (cp << 6) | (cont & 0x3Fu);
+        }
+
+        if (following == 1 && cp < 0x80u) return false;
+        if (following == 2 && (cp < 0x800u || (cp >= 0xD800u && cp <= 0xDFFFu))) return false;
+        if (following == 3 && (cp < 0x10000u || cp > 0x10FFFFu)) return false;
+
+        sawMultiByte = true;
+        i += following + 1;
+    }
+
+    return sawMultiByte;
+}
+
+}
+
+bool DatabaseInfo::testUtf8Content()
+{
+    QFile file(resolvedPath(m_filename));
+    if (!file.exists() || !file.open(QIODevice::ReadOnly))
+    {
+        return false;
+    }
+
+    /* Four megabytes is far past where a German comment or a player's name
+       turns up, and cheap even on a database of a gigabyte. */
+    return looksLikeUtf8(file.read(4 * 1024 * 1024));
+}
+
 bool DatabaseInfo::testBOM()
 {   
     QString fname = resolvedPath(m_filename);
@@ -156,6 +231,12 @@ bool DatabaseInfo::open(bool utf8)
     {
         utf8 = true;
         m_hadBOM = true;
+    }
+    else if (testUtf8Content())
+    {
+        /* No BOM, but unmistakably UTF-8 all the same. Reading it as Latin-1
+           is what turned every "Weiss" written properly into "WeiÃŸ". */
+        utf8 = true;
     }
 
     m_bLoaded = false;

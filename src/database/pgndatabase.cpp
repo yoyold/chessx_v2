@@ -356,12 +356,15 @@ bool PgnDatabase::openString(const QString& content)
     //open file
     initialise();
     m_filename = "Internal.pgn";
+    /* UTF-8 rather than Latin-1: this path carries the clipboard and the game
+       text of a ChessX database, and Latin-1 quietly turns everything it
+       cannot represent into a question mark. */
     QByteArray byteArray;
-    byteArray.append(content.toLatin1());
+    byteArray.append(content.toUtf8());
     QBuffer* buffer = new QBuffer(&byteArray);
     buffer->open(QIODevice::ReadOnly | QIODevice::Text);
     m_file = buffer;
-    m_utf8 = false;
+    m_utf8 = true;
     return parseFile();
 }
 
