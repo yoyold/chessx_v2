@@ -250,6 +250,40 @@ QLabel#ReportPanelLoss {
     font-size: 8pt;
 }
 
+/* --------------------------------------------------------------------------
+   Analysis progress
+   -------------------------------------------------------------------------- */
+
+QDialog#AnalysisProgress {
+    background: @ground;
+}
+
+QLabel#AnalysisProgressWhat {
+    color: @ink;
+    font-size: 12pt;
+}
+
+QLabel#AnalysisProgressWhere {
+    color: @muted;
+    font-size: 9pt;
+}
+
+QProgressBar#AnalysisProgressBar {
+    background: @raised;
+    border: 1px solid @line;
+    border-radius: @radius-sm;
+    height: 8px;
+}
+
+QProgressBar#AnalysisProgressBar::chunk {
+    background: @accent;
+    border-radius: @radius-sm;
+}
+
+QPushButton#AnalysisProgressStop {
+    padding: 7px 14px;
+}
+
 QLabel#ReportPanelMoveNote {
     color: @ink-2;
     background: @raised;

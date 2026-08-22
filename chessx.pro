@@ -278,6 +278,7 @@ HEADERS += src/database/board.h \
   src/guess/guess_sqmove.h \
   src/guess/guess_sqset.h \
   src/gui/GameMimeData.h \
+  src/gui/analysisprogress.h \
   src/gui/analysiswidget.h \
   src/gui/annotationtimeedit.h \
   src/gui/annotationwidget.h \
@@ -465,6 +466,7 @@ SOURCES += \
   src/guess/guess_movelist.cpp \
   src/guess/guess_position.cpp \
   src/guess/guess_recog.cpp \
+  src/gui/analysisprogress.cpp \
   src/gui/analysiswidget.cpp \
   src/gui/annotationtimeedit.cpp \
   src/gui/annotationwidget.cpp \

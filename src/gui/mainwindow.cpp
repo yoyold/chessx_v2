@@ -51,6 +51,7 @@
 #include "savedialog.h"
 #include "settings.h"
 #include "sqlitedatabase.h"
+#include "analysisprogress.h"
 #include "anytagsearch.h"
 #include "designtokens.h"
 #include "storagelocation.h"
@@ -1131,6 +1132,41 @@ void MainWindow::slotSearchAllFields()
     m_gameList->executeSearch(new AnyTagSearch(database(), text),
                               FilterOperator::NullOperator);
     slotStatusMessage(tr("Searching all fields for \"%1\"...").arg(text));
+}
+
+void MainWindow::closeAnalysisProgress()
+{
+    if (m_analysisProgress)
+    {
+        /* Disconnected first: the dialog reports a close as a cancellation,
+           and a run that finished by itself must not be told it was stopped. */
+        m_analysisProgress->disconnect(this);
+        m_analysisProgress->close();
+        m_analysisProgress->deleteLater();
+        m_analysisProgress.clear();
+    }
+}
+
+void MainWindow::slotCloseAnalysisProgress()
+{
+    closeAnalysisProgress();
+}
+
+void MainWindow::slotStopAnalysisRun()
+{
+    /* The report belongs to a run that reached the end of the game; a stopped
+       one has only judged part of it, so it is not offered. What was analysed
+       up to here stays on the game. */
+    m_reportAfterAnalysis = false;
+    closeAnalysisProgress();
+
+    if (m_autoAnalysis && m_autoAnalysis->isChecked())
+    {
+        m_autoAnalysis->trigger();
+    }
+    slotStatusMessage(tr("Analysis stopped."));
+    slotToast(tr("Analysis stopped. What was judged so far stays with the game."),
+              ToastHost::Info);
 }
 
 void MainWindow::slotStoreGameReport()

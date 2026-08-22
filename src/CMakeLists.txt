@@ -336,6 +336,8 @@ add_library(gui STATIC
   dialogs/tournamentselectiondialog.cpp
   dialogs/tournamentselectiondialog.h
   gui/GameMimeData.h
+  gui/analysisprogress.cpp
+  gui/analysisprogress.h
   gui/analysiswidget.cpp
   gui/analysiswidget.h
   gui/analysiswidget.ui

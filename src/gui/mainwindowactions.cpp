@@ -59,6 +59,7 @@
 #include "renametagdialog.h"
 #include "shellhelper.h"
 #include "settings.h"
+#include "analysisprogress.h"
 #include "sqlitedatabase.h"
 #include "streamdatabase.h"
 #include "studyselectiondialog.h"
@@ -2418,8 +2419,16 @@ void MainWindow::slotGameAnalyzeFull()
 
     m_reportAfterAnalysis = true;
     slotStatusMessage(tr("Analysing the whole game..."));
-    slotToast(tr("Analysing the whole game. The report opens when it finishes."),
-              ToastHost::Info);
+
+    /* The run moves the board about by itself for a minute or more. Saying so
+       is the difference between "the program is working" and "the program is
+       doing something inexplicable"; it also keeps a stray click from
+       derailing it. */
+    closeAnalysisProgress();
+    m_analysisProgress = new AnalysisProgress(m_mainAnalysis->engineName(),
+                                              game().plyCount(), this);
+    connect(m_analysisProgress, SIGNAL(cancelled()), SLOT(slotStopAnalysisRun()));
+    m_analysisProgress->show();
 
     m_autoAnalysis->setChecked(true);
     slotToggleAutoAnalysis();
@@ -2798,6 +2807,13 @@ void MainWindow::slotEngineTimeout(const Analysis& analysis)
                     {
                         game().dbPrependAnnotation(scoreText(a), ' ', lastNode);
                         rememberEngineLine(a, lastNode);
+                        if (m_analysisProgress)
+                        {
+                            m_analysisProgress->setProgress(
+                                        game().ply(lastNode),
+                                        game().moveToSan(GameX::MoveOnly,
+                                                         GameX::PreviousMove, lastNode));
+                        }
                     }
 
                     if (!threashold || ((lastScore != -9999) && (abs(score-lastScore) > threashold)))
@@ -3090,10 +3106,15 @@ void MainWindow::AutoMoveAtEndOfGame()
                     /* Queued, in this order: let the engine finish shutting
                        down, store the result, then read the summary back off
                        the stored game. */
+                    if (m_analysisProgress)
+                    {
+                        m_analysisProgress->setFinishing();
+                    }
                     QTimer::singleShot(0, this, SLOT(slotCommitFullAnalysis()));
                     QTimer::singleShot(0, this, SLOT(slotRefreshAnalysisViews()));
                     QTimer::singleShot(0, this, SLOT(slotStoreGameReport()));
                     QTimer::singleShot(0, this, SLOT(slotGameReport()));
+                    QTimer::singleShot(0, this, SLOT(slotCloseAnalysisProgress()));
                 }
             }
         }

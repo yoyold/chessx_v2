@@ -39,6 +39,7 @@ class DatabaseInfo;
 class DatabaseList;
 class DatabaseRegistry;
 class CommandPalette;
+class AnalysisProgress;
 class GameReportPanel;
 class QLineEdit;
 #include "gamereport.h"
@@ -159,6 +160,10 @@ protected:
     void slotCommitFullAnalysis();
     /** Puts the summary of the run just finished into the database. */
     void slotStoreGameReport();
+    /** Stops a running full-game analysis at the user's request. */
+    void slotStopAnalysisRun();
+    /** Queued counterpart to closeAnalysisProgress(). */
+    void slotCloseAnalysisProgress();
     /** Narrows the game list to games with the typed text in any field. */
     void slotSearchAllFields();
     /** Writes the open database out as a ChessX database, game by game. */
@@ -596,6 +601,8 @@ protected:
     /** Shows in the report panel what the stored run wanted to play at the
         move now on the board, or nothing when there is no such line. */
     void showStoredLine();
+    /** Takes the progress window away, whichever way the run ended. */
+    void closeAnalysisProgress();
     /** @return a line naming when the stored analysis ran and what made it,
         or nothing when the game carries no stored report. */
     QString storedReportLine();
@@ -783,6 +790,9 @@ private:
     QPointer<NavRail> m_navRail;
     QPointer<CommandPalette> m_commandPalette;
     QPointer<GameReportPanel> m_reportPanel;
+    /** Shown while a whole game is being analysed, so the run is not mistaken
+        for the program misbehaving. */
+    QPointer<AnalysisProgress> m_analysisProgress;
     QPointer<QLineEdit> m_gameSearch;
     QPointer<QTimer> m_gameSearchTimer;
     QPointer<ToastHost> m_toastHost;
