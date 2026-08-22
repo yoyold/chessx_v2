@@ -147,6 +147,8 @@ protected:
     void slotCommandPalette();
     /** Summarises the current game: accuracy and move quality per side. */
     void slotGameReport();
+    /** Runs the engine over the whole game, then shows the report. */
+    void slotGameAnalyzeFull();
     /** Raises a transient notification over the window. */
     void slotToast(const QString& text, int severity);
     /** Shows the dashboard page. */
@@ -653,6 +655,10 @@ private:
     static bool useModernLayout();
 
     /** Create single menu action. */
+    /** @return the prose an analysis run should prepend, empty when text
+        annotation is switched off. */
+    QString autoAnnotationText() const;
+
     QAction* createAction(QString name, const char* slot, const QKeySequence& key = QKeySequence(),
                           QToolBar* pToolBar = nullptr, QString image = QString(), const QString& tip = QString(), QAction::MenuRole menuRole = QAction::NoRole, QObject *parent=nullptr);
     /** Create single menu action. */
@@ -742,6 +748,9 @@ private:
     QPointer<CommandPalette> m_commandPalette;
     QPointer<ToastHost> m_toastHost;
     QPointer<HomeView> m_homeView;
+    /** Set while a full-game analysis is running, so the report can be shown
+        when it reaches the end of the game. */
+    bool m_reportAfterAnalysis;
     /** False until start-up finishes, so the dashboard is not closed by the
         empty game that is loaded while the window is being built. */
     bool m_homeDismissable;

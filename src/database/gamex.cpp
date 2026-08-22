@@ -1793,14 +1793,58 @@ void GameX::evaluation(double& d) const
     int pos = annotation().indexOf(eval, 0, &match);
     if(pos >= 0)
     {
-        QString w = match.captured(2);
-        bool ok;
-        double f = w.toDouble(&ok);
-        if (ok)
+        double f = 0.0;
+        if (parseEvaluation(match.captured(2), f))
         {
             d = f;
         }
     }
+}
+
+bool GameX::parseEvaluation(const QString& text, double& pawns)
+{
+    const QString s = text.trimmed();
+    if (s.isEmpty() || s.startsWith('#'))
+    {
+        return false;   // a forced mate is not a quantity this graph can plot
+    }
+
+    const int comma = s.indexOf(',');
+    if (comma > 0)
+    {
+        /* "<centipawns>,<depth>" - the form several analysis tools write.
+           A decimal comma would put at most a couple of digits in front, so a
+           long leading part means centipawns rather than a European decimal. */
+        const QString head = s.left(comma);
+        const QString tail = s.mid(comma + 1);
+        bool headOk = false, tailOk = false;
+        const int centipawns = head.toInt(&headOk);
+        tail.toInt(&tailOk);
+
+        if (headOk && tailOk && qAbs(centipawns) >= 30)
+        {
+            pawns = centipawns / 100.0;
+            return true;
+        }
+        /* Otherwise treat the comma as a decimal separator: "3,22". */
+        bool ok = false;
+        const double value = QString(s).replace(',', '.').toDouble(&ok);
+        if (ok)
+        {
+            pawns = value;
+            return true;
+        }
+        return false;
+    }
+
+    bool ok = false;
+    const double value = s.toDouble(&ok);
+    if (ok)
+    {
+        pawns = value;
+        return true;
+    }
+    return false;
 }
 
 namespace

@@ -109,4 +109,14 @@ void GameNotationWidget::configureFont()
         f.setFamily(fontFamily);
     }
     setFont(f);
+    /* The rendered text takes its size from the browser's document, not from
+       this container. */
+    if (m_browser)
+    {
+        m_browser->setFont(f);
+        if (m_browser->document())
+        {
+            m_browser->document()->setDefaultFont(f);
+        }
+    }
 }

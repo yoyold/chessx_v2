@@ -462,6 +462,9 @@ QMap<QString, QVariant> Settings::initDefaultValues() const
     map.insert("/Board/AnalyseOnlyMainline", true);
     map.insert("/Board/AnnotateScore", false);
     map.insert("/Board/AddAnnotation", "");
+    /* Whether an analysis run writes text comments into the game. The move
+       judgements (NAGs) and the variations it finds are kept either way. */
+    map.insert("/Board/AnnotateText", false);
     map.insert("/Board/BlunderCheck", 0);
     map.insert("/Board/AutoPromoteToQueen", false);
     map.insert("/Board/AlwaysScale", false);

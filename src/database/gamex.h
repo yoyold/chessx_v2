@@ -359,6 +359,9 @@ public :
     /** Finds where the middlegame and the endgame begin, as half move indices,
         or -1 for a phase the game never reaches. */
     void scorePhases(int& middlegamePly, int& endgamePly) const;
+    /** Reads an %eval payload into pawns. Understands "1.35", "3,22" and the
+        "<centipawns>,<depth>" form. @return false for mates and rubbish. */
+    static bool parseEvaluation(const QString& text, double& pawns);
 
     /** @return ECO code for the game */
     QString ecoClassify() const;

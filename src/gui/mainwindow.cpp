@@ -114,7 +114,8 @@ MainWindow::MainWindow() : QMainWindow(),
     m_lastMessageWasHint(false),
     m_readAhead(0),
     m_breakpoint(-1),
-    m_homeDismissable(false)
+    m_homeDismissable(false),
+    m_reportAfterAnalysis(false)
 {
     setObjectName("MainWindow");
     m_registry = new DatabaseRegistry();
@@ -2482,6 +2483,8 @@ void MainWindow::setupActions()
 
     gameMenu->addSeparator();
 
+    gameMenu->addAction(createAction(tr("Analyze whole game"), SLOT(slotGameAnalyzeFull()),
+                                     Qt::CTRL | Qt::SHIFT | Qt::Key_A));
     gameMenu->addAction(createAction(tr("Game report..."), SLOT(slotGameReport()),
                                      Qt::CTRL | Qt::SHIFT | Qt::Key_G));
     gameMenu->addSeparator();

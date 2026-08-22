@@ -17,6 +17,7 @@
 #include "boardsetup.h"
 #include "boardview.h"
 #include "boardviewex.h"
+#include "toasthost.h"
 #include "chessxsettings.h"
 #include "copydialog.h"
 #include "guess_compileeco.h"
@@ -2038,6 +2039,14 @@ void MainWindow::slotGameDumpBoard()
     qDebug() << "Board:" << game().board().toFen() << "//" << game().board().getHashValue();
 }
 
+QString MainWindow::autoAnnotationText() const
+{
+    /* An empty prefix means the run adds no prose of its own. */
+    return AppSettings->getValue("/Board/AnnotateText").toBool()
+            ? AppSettings->getValue("/Board/AddAnnotation").toString()
+            : QString();
+}
+
 QString MainWindow::scoreText(const Analysis& analysis)
 {
     QString s;
@@ -2312,6 +2321,53 @@ void MainWindow::slotToggleAutoRespond()
     m_matchTime[0] = 0;
     m_matchTime[1] = 0;
     m_elapsedUserTimeValid = false;
+}
+
+void MainWindow::slotGameAnalyzeFull()
+{
+    if (m_autoAnalysis->isChecked())
+    {
+        /* Already running: a second request should stop it, not start a race. */
+        m_reportAfterAnalysis = false;
+        m_autoAnalysis->trigger();
+        return;
+    }
+
+    if (!m_mainAnalysis->isEngineConfigured())
+    {
+        MessageDialog::information(
+            tr("No engine is set up in Analysis 1, so the game cannot be analysed. "
+               "Add one under Preferences > Engines, then try again."),
+            tr("Analyze game"));
+        return;
+    }
+
+    if (game().plyCount() < 2)
+    {
+        MessageDialog::information(tr("This game has no moves to analyse."),
+                                   tr("Analyze game"));
+        return;
+    }
+
+    /* Start from a known end of the game so the run covers all of it; which end
+       depends on the direction the user has configured. */
+    if (AppSettings->getValue("/Board/BackwardAnalysis").toBool())
+    {
+        game().moveToEnd();
+    }
+    else
+    {
+        game().moveToStart();
+    }
+    moveChanged();
+
+    m_reportAfterAnalysis = true;
+    slotStatusMessage(tr("Analysing the whole game..."));
+    slotToast(tr("Analysing the whole game. The report opens when it finishes."),
+              ToastHost::Info);
+
+    m_autoAnalysis->setChecked(true);
+    slotToggleAutoAnalysis();
 }
 
 void MainWindow::slotToggleAutoAnalysis()
@@ -2681,7 +2737,7 @@ void MainWindow::slotEngineTimeout(const Analysis& analysis)
                     {
                         if (!threashold || AppSettings->getValue("/Board/BackwardAnalysis").toBool())
                         {
-                            if (!gameAddAnalysis(a, AppSettings->getValue("/Board/AddAnnotation").toString()))
+                            if (!gameAddAnalysis(a, autoAnnotationText()))
                             {
                                 if (AppSettings->getValue("/Board/AnnotateScore").toBool())
                                 {
@@ -2693,7 +2749,11 @@ void MainWindow::slotEngineTimeout(const Analysis& analysis)
                         else
                         {
                             Move m = a.variation().constFirst();
-                            game().dbPrependAnnotation(AppSettings->getValue("/Board/AddAnnotation").toString(), ' ', lastNode);
+                            const QString prefix = autoAnnotationText();
+                            if (!prefix.isEmpty())
+                            {
+                                game().dbPrependAnnotation(prefix, ' ', lastNode);
+                            }
                             addAutoNag(m.color(), score, lastScore, threashold, lastNode);
                             if (AppSettings->getValue("/Board/AnnotateScore").toBool())
                             {
@@ -2929,8 +2989,11 @@ void MainWindow::AutoMoveAtEndOfGame()
     {
         if (m_todoAutoAnalysis.isEmpty())
         {
-            QString engineAnnotation = tr("Engine %1").arg(m_mainAnalysis->displayName());
-            game().dbSetAnnotation(engineAnnotation, game().lastMove());
+            if (AppSettings->getValue("/Board/AnnotateText").toBool())
+            {
+                QString engineAnnotation = tr("Engine %1").arg(m_mainAnalysis->displayName());
+                game().dbSetAnnotation(engineAnnotation, game().lastMove());
+            }
             UpdateGameText();
 
             if (AppSettings->getValue("/Board/AutoSaveAndContinue").toBool())
@@ -2955,6 +3018,13 @@ void MainWindow::AutoMoveAtEndOfGame()
             {
                 // Game finished
                 m_autoAnalysis->trigger();
+                if (m_reportAfterAnalysis)
+                {
+                    m_reportAfterAnalysis = false;
+                    /* Queued: let the engine finish shutting down and the game
+                       text settle before a modal dialog takes over. */
+                    QTimer::singleShot(0, this, SLOT(slotGameReport()));
+                }
             }
         }
         else

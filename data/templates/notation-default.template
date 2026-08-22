@@ -44,6 +44,11 @@ MainLineFontWeight,String,Bold|Normal,Bold,The weight of the font
   .nag-warn     {color: #0e1413; background-color: #dfa34e; font-weight: bold}\n
   .nag-bad      {color: #0e1413; background-color: #df7b46; font-weight: bold}\n
   .nag-worst    {color: #0e1413; background-color: #cf5546; font-weight: bold}\n
+  .move-good    {color: #6fae6c; font-weight: bold}\n
+  .move-idea    {color: #43ada5; font-weight: bold}\n
+  .move-warn    {color: #dfa34e; font-weight: bold}\n
+  .move-bad     {color: #df7b46; font-weight: bold}\n
+  .move-worst   {color: #cf5546; font-weight: bold}\n
   span.var      {color: @VariationColor@}\n
   td.mainline   {padding: 1px 20px 1px 0px; color: @MainLineMoveColor@}\n
   td.movenum    {padding: 1px 12px 1px 2px; color: @VariationColor@}\n
@@ -96,9 +101,9 @@ MarkupNag=<a class="nag">,</a>
 MarkupColumnStyleMove=<td class="mainline">,</td>\n
 MarkupColumnStyleRow=<tr class="mainline">,</tr>\n
 MarkupColumnStyleMainline=<table class="moves" cellspacing="0" cellpadding="0">,</table>\n
-MarkupAnnotationInline=<a class="comment" href="cmt:%1">,</a>\n
+MarkupAnnotationInline= <a class="comment" href="cmt:%1">,</a>\n
 MarkupAnnotationIndent=<p class="comment"><a class="comment" href="cmt:%1">,</a></p>
-MarkupPreAnnotationInline= <a class="comment" href="precmt:%1">,</a>\n
+MarkupPreAnnotationInline= <a class="comment" href="precmt:%1">,</a> \n
 MarkupPreAnnotationIndent=<p class="precomment"><a class="comment" href="precmt:%1">,</a></p>
 MarkupHeaderLine=<b>,</b><br>\n
 MarkupHeaderTagName=[,

@@ -61,11 +61,20 @@ public:
 
     explicit GameReport(const Result& result, QWidget* parent = nullptr);
 
+    /** @return the report as a self-contained HTML page. */
+    static QString toHtml(const Result& result);
+
+private slots:
+    /** Asks for a file and writes the report to it. */
+    void slotSave();
+
 private:
     /** Builds the block of figures for one player. */
     QWidget* buildSide(const QString& name, const Side& side, bool hasEvaluations);
     /** One "3 blunders" row, hidden when the count is zero. */
     QWidget* buildCount(const QString& label, int count, const QString& color);
+
+    Result m_result;
 };
 
 #endif // GAMEREPORT_H_INCLUDED

@@ -6,9 +6,15 @@
 #include "designtokens.h"
 #include "gamex.h"
 #include "nag.h"
+#include "messagedialog.h"
 #include "tags.h"
 
 #include <QDialogButtonBox>
+#include <QFile>
+#include <QFileDialog>
+#include <QPushButton>
+#include <QRegularExpression>
+#include <QTextStream>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -56,6 +62,98 @@ GameReport::Side::Side()
 GameReport::Result::Result()
     : hasEvaluations(false)
 {}
+
+QString GameReport::toHtml(const Result& result)
+{
+    /* Self-contained: colours are written inline rather than referenced from a
+       style sheet, so the saved file still reads correctly anywhere. */
+    const QString ink = "#1e1a16";
+    const QString muted = "#6b635a";
+    const QString accent = "#1b7a73";
+
+    auto countRow = [](const QString& label, int count, const QString& color)
+    {
+        if (count <= 0) return QString();
+        return QString("<tr><td align=\"right\" style=\"color:%1;font-weight:600;padding-right:8px\">"
+                       "%2</td><td>%3</td></tr>")
+                .arg(color).arg(count).arg(label.toHtmlEscaped());
+    };
+
+    auto sideBlock = [&](const QString& name, const Side& s)
+    {
+        QString h = QString("<td valign=\"top\" style=\"padding:16px;border:1px solid #e3dbce;"
+                            "border-radius:12px\">"
+                            "<div style=\"font-size:15px;font-weight:600;color:%1\">%2</div>")
+                .arg(ink, (name.isEmpty() ? tr("Unknown player") : name).toHtmlEscaped());
+        if (result.hasEvaluations)
+        {
+            h += QString("<div style=\"font-size:34px;font-weight:600;color:%1\">%2%</div>")
+                    .arg(accent).arg(s.accuracy, 0, 'f', 1);
+            h += QString("<div style=\"color:%1\">%2</div>").arg(muted, tr("Accuracy"));
+            h += QString("<div style=\"color:%1\">%2</div>").arg(muted,
+                    tr("%1 centipawns lost per move, across %2 moves")
+                        .arg(s.averageLoss, 0, 'f', 0).arg(s.moves).toHtmlEscaped());
+        }
+        h += "<table style=\"margin-top:10px\">";
+        h += countRow(tr("Brilliant"), s.brilliant, "#3f7d46");
+        h += countRow(tr("Good"), s.good, "#3f7d46");
+        h += countRow(tr("Interesting"), s.interesting, accent);
+        h += countRow(tr("Inaccuracies"), s.inaccuracies, "#a9701a");
+        h += countRow(tr("Mistakes"), s.mistakes, "#b4541f");
+        h += countRow(tr("Blunders"), s.blunders, "#a83226");
+        h += "</table></td>";
+        return h;
+    };
+
+    QString html = "<!DOCTYPE html><html><head><meta charset=\"utf-8\">";
+    html += QString("<title>%1</title></head>").arg(tr("Game report"));
+    html += QString("<body style=\"font-family:sans-serif;background:#faf7f2;color:%1;"
+                    "padding:24px\">").arg(ink);
+    html += QString("<h1 style=\"font-size:22px;margin:0\">%1</h1>")
+            .arg((result.event.isEmpty() ? tr("Game report") : result.event).toHtmlEscaped());
+    if (!result.result.isEmpty())
+    {
+        html += QString("<p style=\"color:%1;margin:4px 0 16px\">%2</p>")
+                .arg(muted, result.result.toHtmlEscaped());
+    }
+    if (!result.hasEvaluations)
+    {
+        html += QString("<p style=\"color:%1\">%2</p>").arg(muted,
+                tr("This game has no engine evaluations, so accuracy could not be measured."));
+    }
+    html += "<table cellspacing=\"12\"><tr>";
+    html += sideBlock(result.whiteName, result.white);
+    html += sideBlock(result.blackName, result.black);
+    html += "</tr></table></body></html>";
+    return html;
+}
+
+void GameReport::slotSave()
+{
+    QString suggested = m_result.event.isEmpty() ? tr("game-report") : m_result.event;
+    /* Keep the suggestion usable as a file name on any platform. */
+    suggested.replace(QRegularExpression("[^\\w\\-. ]"), "_");
+
+    const QString path = QFileDialog::getSaveFileName(
+                this, tr("Save report"),
+                suggested + ".html",
+                tr("HTML page (*.html);;All files (*)"));
+    if (path.isEmpty())
+    {
+        return;
+    }
+
+    QFile file(path);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+    {
+        MessageDialog::warning(tr("The report could not be written to %1.").arg(path));
+        return;
+    }
+    QTextStream out(&file);
+    out.setEncoding(QStringConverter::Utf8);
+    out << toHtml(m_result);
+    file.close();
+}
 
 GameReport::Result GameReport::analyse(const GameX& game)
 {
@@ -217,7 +315,8 @@ QWidget* GameReport::buildSide(const QString& name, const Side& side, bool hasEv
 }
 
 GameReport::GameReport(const Result& result, QWidget* parent)
-    : QDialog(parent)
+    : QDialog(parent),
+      m_result(result)
 {
     setObjectName("GameReport");
     setWindowTitle(tr("Game report"));
@@ -265,6 +364,8 @@ GameReport::GameReport(const Result& result, QWidget* parent)
     root->addLayout(sides, 1);
 
     QDialogButtonBox* buttons = new QDialogButtonBox(QDialogButtonBox::Close, this);
+    QPushButton* save = buttons->addButton(tr("Save report..."), QDialogButtonBox::ActionRole);
+    connect(save, SIGNAL(clicked()), SLOT(slotSave()));
     connect(buttons, SIGNAL(rejected()), SLOT(reject()));
     connect(buttons, SIGNAL(accepted()), SLOT(accept()));
     root->addWidget(buttons);

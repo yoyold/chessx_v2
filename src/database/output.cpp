@@ -389,7 +389,15 @@ QString Output::writeMove(MoveToWrite moveToWrite)
         // *** Write the actual move
         QString mate = m_startTagMap[MarkupMate] + "#" + m_endTagMap[MarkupMate];
         san.replace("#", mate);
-        text += san;
+        if((m_outputType == Html || m_outputType == NotationWidget) && !m_currentNagClass.isEmpty())
+        {
+            text += QString("<span class=\"move-%1\">").arg(m_currentNagClass.mid(4))
+                    + san + "</span>";
+        }
+        else
+        {
+            text += san;
+        }
 
         // *** End the markup for the move
         if(m_currentVariationLevel > 0)
@@ -406,13 +414,13 @@ QString Output::writeMove(MoveToWrite moveToWrite)
             if((m_outputType == Html || m_outputType == NotationWidget) && !m_currentNagClass.isEmpty())
             {
                 /* A shaded pill makes a blunder as findable in the move list as
-                   it is on the board. */
-                text += QString("<span class=\"%1\">&nbsp;").arg(m_currentNagClass)
+                   it is on the board. The leading space keeps it off the move. */
+                text += QString(" <span class=\"%1\">&nbsp;").arg(m_currentNagClass)
                         + nagString + "&nbsp;</span>";
             }
             else
             {
-                text += m_startTagMap[MarkupNag] + nagString + m_endTagMap[MarkupNag];
+                text += " " + m_startTagMap[MarkupNag] + nagString + m_endTagMap[MarkupNag];
             }
         }
     }
