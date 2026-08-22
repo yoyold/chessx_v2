@@ -150,8 +150,10 @@ protected:
     void slotGameReport();
     /** Runs the engine over the whole game, then shows the report. */
     void slotGameAnalyzeFull();
-    /** Recomputes the summary shown under the engine output. */
-    void slotRefreshReportPanel();
+    /** Recomputes the summary and the graphs, which read the game separately. */
+    void slotRefreshAnalysisViews();
+    /** Stores a finished full-game analysis with the game. */
+    void slotCommitFullAnalysis();
     /** Moves the board to a half move picked in the summary. */
     void slotGoToPly(int ply);
     /** Raises a transient notification over the window. */
@@ -577,6 +579,9 @@ protected:
     void closeBoardViewForDbIndex(void *dbIndex);
     int findBoardView(void *dbIndex) const;
     void UpdateMaterialWidget();
+    /** Fills the evaluation bar from the figure stored with the current move,
+        unless an engine is judging the position right now. */
+    void showStoredEvaluation();
     bool ActivateDatabase(QString fname);
     bool addRemoteMoveFrom64Char(QString s);
     void newGame();
@@ -757,6 +762,10 @@ private:
     /** Set while a full-game analysis is running, so the report can be shown
         when it reaches the end of the game. */
     bool m_reportAfterAnalysis;
+    /** The game as it stood before that run, which is what lets the finished
+        analysis be handed to the database as a change rather than being left
+        in memory. */
+    GameX m_gameBeforeFullAnalysis;
     /** False until start-up finishes, so the dashboard is not closed by the
         empty game that is loaded while the window is being built. */
     bool m_homeDismissable;

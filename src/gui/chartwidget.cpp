@@ -87,6 +87,25 @@ void ChartWidget::setRange(int line, double maxAbs)
     m_ranges[line] = maxAbs;
 }
 
+void ChartWidget::setCurve(int line, Curve curve)
+{
+    while (m_curves.size() <= line)
+    {
+        m_curves.append(Linear);
+    }
+    m_curves[line] = curve;
+}
+
+double ChartWidget::winningChances(double pawns)
+{
+    /* The mapping Lichess plots its advantage chart with. The constant sets how
+       quickly an edge turns into a won game: half the height is reached around
+       three pawns, and nothing ever runs off the top, so a decisive finish
+       reads as decisive instead of being clipped flat against the frame. */
+    static const double Steepness = 0.00368208;
+    return 2.0 / (1.0 + std::exp(-Steepness * pawns * 100.0)) - 1.0;
+}
+
 void ChartWidget::setValues(int line, const QList<double>& values)
 {
     if (line >= m_values.size())
@@ -425,9 +444,14 @@ void ChartWidget::updatePolygon(int line)
     polygon.clear();
     if (values.count()>1)
     {
+        const bool asChances = (line < m_curves.size())
+                && (m_curves.at(line) == WinProbability);
+
         /* A fixed full-scale value where one was given, so the shape of the
-           game does not change every time a new extreme appears. */
-        double max = (line < m_ranges.size()) ? m_ranges.at(line) : 0.0;
+           game does not change every time a new extreme appears. Winning
+           chances carry their own scale: they cannot leave -1 to +1. */
+        double max = asChances ? 1.0
+                   : ((line < m_ranges.size()) ? m_ranges.at(line) : 0.0);
         if (max <= 0.0)
         {
             foreach(double d, values)
@@ -450,7 +474,8 @@ void ChartWidget::updatePolygon(int line)
         int i = 0;
         foreach(double d, values)
         {
-            const double clamped = qBound(-max, d, max);
+            const double plotted = asChances ? winningChances(d) : d;
+            const double clamped = qBound(-max, plotted, max);
             polygon<<QPointF(multiplierW*i, -clamped*multiplierH + zero);
             ++i;
         }

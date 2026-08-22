@@ -807,7 +807,7 @@ void MainWindow::setupHomeView()
             slotShowBoard();
         }
         /* A different game means different figures. */
-        slotRefreshReportPanel();
+        slotRefreshAnalysisViews();
     });
 
     slotRefreshHome();
@@ -946,8 +946,49 @@ void MainWindow::slotGameReport()
     dialog.exec();
 }
 
-void MainWindow::slotRefreshReportPanel()
+void MainWindow::slotCommitFullAnalysis()
 {
+    DatabaseInfo* dbInfo = databaseInfo();
+    if (!dbInfo || !dbInfo->isValid())
+    {
+        return;
+    }
+
+    /* The run writes through the db* methods, which leave the undo stack alone,
+       so nothing so far has told the database that the game changed at all.
+       Handing it the state from before the run marks the game as modified and
+       makes the whole analysis one undo step. */
+    dbInfo->setGameModified(true, m_gameBeforeFullAnalysis, tr("Analyze whole game"));
+    m_gameBeforeFullAnalysis = GameX();
+
+    if (database()->isReadOnly())
+    {
+        /* Nothing to store into; the figures stay for as long as the game is
+           open, which is all a read-only database can offer. */
+        slotToast(tr("This database is read only, so the analysis cannot be stored."),
+                  ToastHost::Warning);
+        return;
+    }
+
+    /* Storing it is what makes the report survive: there is no report kept
+       anywhere, it is recomputed from the evaluations and move judgements held
+       with the game, so a game analysed only in memory comes back blank. */
+    saveGame(dbInfo);
+    slotToast(tr("Analysis stored with the game."), ToastHost::Success);
+}
+
+void MainWindow::slotRefreshAnalysisViews()
+{
+    /* The summary reads the game directly, but the graphs are fed from the
+       series DatabaseInfo caches, and an analysis run edits the game through
+       the db* methods, which bypass the undo stack and so never reach
+       DatabaseInfo::updateMaterial(). Refreshing only one of the two is how the
+       summary ends up showing figures the eval graph knows nothing about. */
+    if (databaseInfo())
+    {
+        databaseInfo()->updateMaterial();
+        UpdateMaterialWidget();
+    }
     if (m_reportPanel)
     {
         m_reportPanel->setResult(GameReport::analyse(game()));
@@ -990,8 +1031,49 @@ void MainWindow::slotEvaluationMate(int moves)
 
 void MainWindow::slotEvaluationCleared()
 {
+    /* The engine has stopped having an opinion, which is not the same as there
+       being nothing to show: whatever the analysis stored for this move takes
+       over again. */
+    showStoredEvaluation();
+}
+
+void MainWindow::showStoredEvaluation()
+{
     BoardViewEx* frame = BoardViewFrame(m_boardView);
-    if (frame && frame->evalBar())
+    if (!frame || !frame->evalBar())
+    {
+        return;
+    }
+
+    /* A running engine is judging this very position, so its reading is the
+       better one and is left alone. Everywhere else the bar shows what the
+       analysis stored, the way Lichess shows a game's own evaluations until
+       you ask the engine for a fresh one. */
+    if (m_mainAnalysis && m_mainAnalysis->isEngineRunning())
+    {
+        return;
+    }
+
+    QRegularExpressionMatch match;
+    if (game().annotation().indexOf(EvalAnnotation().filter(), 0, &match) < 0)
+    {
+        frame->evalBar()->clear();
+        return;
+    }
+
+    const QString payload = match.captured(2);
+    double pawns = 0.0;
+    if (payload.startsWith('#'))
+    {
+        /* Whoever wrote the annotation may have left the sign off, in which
+           case the best that can be said is how far away the mate is. */
+        frame->evalBar()->setMate(payload.mid(1).toInt());
+    }
+    else if (GameX::parseEvaluation(payload, pawns))
+    {
+        frame->evalBar()->setScore(qRound(pawns * 100.0));
+    }
+    else
     {
         frame->evalBar()->clear();
     }

@@ -44,10 +44,10 @@ void GameToolBar::slotDisplayMaterial(const QList<double>& material)
 
 void GameToolBar::slotDisplayEvaluations(const QList<double>& evaluations)
 {
-    /* Past about five pawns the game is decided and the exact number stops
-       telling the reader anything; clamping there keeps the opening and
-       middlegame - where the swings actually matter - readable. */
-    m_chart->setRange(1, 5.0);
+    /* Plotted as winning chances rather than as pawns, which is how Lichess
+       draws the same graph: the swings that decide games show up, and a
+       runaway score no longer flattens everything before it. */
+    m_chart->setCurve(1, ChartWidget::WinProbability);
     m_chart->setValues(1, evaluations);
 }
 

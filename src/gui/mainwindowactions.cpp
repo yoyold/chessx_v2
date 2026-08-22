@@ -1362,6 +1362,10 @@ void MainWindow::moveChanged()
     // Set board first
     m_boardView->setBoard(g.board(), from, to, game().atLineEnd());
 
+    /* Whatever the analysis stored for this move belongs in the bar as soon as
+       the move is on the board. */
+    showStoredEvaluation();
+
     /* Badge the move just played with its own judgement, if it has one. */
     int quality = 0;
     const NagSet moveNags = g.nags(m);
@@ -2366,6 +2370,10 @@ void MainWindow::slotGameAnalyzeFull()
         return;
     }
 
+    /* Kept so the finished analysis can be handed to the database as one
+       change, and so the whole run can be undone as one step. */
+    m_gameBeforeFullAnalysis = game();
+
     /* Start from a known end of the game so the run covers all of it; which end
        depends on the direction the user has configured. */
     if (AppSettings->getValue("/Board/BackwardAnalysis").toBool())
@@ -3048,9 +3056,11 @@ void MainWindow::AutoMoveAtEndOfGame()
                 if (m_reportAfterAnalysis)
                 {
                     m_reportAfterAnalysis = false;
-                    /* Queued: let the engine finish shutting down and the game
-                       text settle before the summary is computed. */
-                    QTimer::singleShot(0, this, SLOT(slotRefreshReportPanel()));
+                    /* Queued, in this order: let the engine finish shutting
+                       down, store the result, then read the summary back off
+                       the stored game. */
+                    QTimer::singleShot(0, this, SLOT(slotCommitFullAnalysis()));
+                    QTimer::singleShot(0, this, SLOT(slotRefreshAnalysisViews()));
                     QTimer::singleShot(0, this, SLOT(slotGameReport()));
                 }
             }

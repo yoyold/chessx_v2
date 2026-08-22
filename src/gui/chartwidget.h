@@ -31,6 +31,21 @@ public:
     /** Fixes the full-scale value for @p line; values beyond it saturate.
         Pass 0 to scale to the data instead. Must be called before setValues(). */
     void setRange(int line, double maxAbs);
+
+    /** How a series' values are spread over the height. */
+    enum Curve
+    {
+        Linear,         ///< the value itself, against a fixed full scale
+        WinProbability  ///< the value's winning chances, the way Lichess plots them
+    };
+    /** Sets how @p line is spread. Must be called before setValues(). */
+    void setCurve(int line, Curve curve);
+
+    /** @return @p pawns expressed as winning chances, -1 to +1.
+        Two pawns up is worth far more than one, and twenty is not worth ten
+        times two; a straight plot of the score says otherwise and leaves every
+        ordinary game hugging the centre line. */
+    static double winningChances(double pawns);
     void setPly(int ply);
 
 signals:
@@ -70,6 +85,7 @@ private:
     QVector<QList<double>> m_values;
     QVector<int> m_baselines;
     QVector<double> m_ranges;
+    QVector<int> m_curves;
     int m_middlegamePly;
     int m_endgamePly;
     /** Half move under the pointer, or -1 when the pointer is elsewhere. */

@@ -1813,25 +1813,20 @@ bool GameX::parseEvaluation(const QString& text, double& pawns)
     if (comma > 0)
     {
         /* "<centipawns>,<depth>" - the form several analysis tools write.
-           A decimal comma would put at most a couple of digits in front, so a
-           long leading part means centipawns rather than a European decimal. */
+           Nothing writes a decimal comma here: %eval is specified with a point
+           and ChessX formats its own scores in the C locale, so a comma is the
+           depth separator and the leading part is centipawns however small it
+           is.  Reading "24,20" as 24.2 pawns instead of 0.24 was enough to put
+           every judged move off the top of the graph. */
         const QString head = s.left(comma);
         const QString tail = s.mid(comma + 1);
         bool headOk = false, tailOk = false;
         const int centipawns = head.toInt(&headOk);
         tail.toInt(&tailOk);
 
-        if (headOk && tailOk && qAbs(centipawns) >= 30)
+        if (headOk && tailOk)
         {
             pawns = centipawns / 100.0;
-            return true;
-        }
-        /* Otherwise treat the comma as a decimal separator: "3,22". */
-        bool ok = false;
-        const double value = QString(s).replace(',', '.').toDouble(&ok);
-        if (ok)
-        {
-            pawns = value;
             return true;
         }
         return false;

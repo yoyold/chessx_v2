@@ -50,7 +50,17 @@ void GameReportPanel::clear()
 void GameReportPanel::setResult(const GameReport::Result& result)
 {
     m_result = result;
-    m_hasResult = true;
+
+    /* A game that was never analysed yields a result full of zeroes.  Showing
+       two names under an empty column reads like a report that came back
+       blank, so that case keeps the hint about how to produce one. */
+    m_hasResult = result.hasEvaluations;
+    for (int i = 0; i < GameReport::CategoryCount && !m_hasResult; ++i)
+    {
+        const GameReport::Category cat = static_cast<GameReport::Category>(i);
+        m_hasResult = (result.white.count(cat) > 0) || (result.black.count(cat) > 0);
+    }
+
     m_cursor.clear();
     rebuild();
 }
